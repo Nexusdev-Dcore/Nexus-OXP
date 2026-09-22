@@ -1,0 +1,156 @@
+@model SearchViewModel
+@{
+    ViewData["Title"] = "Search";
+}
+
+<div class="dashboard-page">
+    <section class="dashboard-header">
+        <div class="dashboard-header-content">
+            <div>
+                <span class="section-label">Search</span>
+                <h1>Workspace Search</h1>
+                <p>Find projects, tasks, teams, and users you can access.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="dashboard-section">
+        <div class="dashboard-card">
+            <form asp-action="Index" method="get" class="filter-form">
+                <div class="filter-field filter-field-wide">
+                    <label for="q" class="form-label">Search</label>
+                    <input id="q" name="q" value="@Model.Query" class="form-control" placeholder="Project, task, team, or user" />
+                </div>
+                <div class="filter-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-search"></i>
+                        Search
+                    </button>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    @if (!Model.HasSearched)
+    {
+        <section class="dashboard-section">
+            <div class="empty-state">
+                <div class="empty-state-icon"><i class="bi bi-search"></i></div>
+                <h3>Start with a search</h3>
+                <p>Results are limited to records your account can view.</p>
+            </div>
+        </section>
+    }
+    else if (Model.TotalResults == 0)
+    {
+        <section class="dashboard-section">
+            <div class="empty-state">
+                <div class="empty-state-icon"><i class="bi bi-search"></i></div>
+                <h3>No results found</h3>
+                <p>Try another name, title, email, or keyword.</p>
+            </div>
+        </section>
+    }
+    else
+    {
+        <section class="dashboard-content">
+            <div class="row g-4">
+                <div class="col-xl-6">
+                    <div class="dashboard-card">
+                        <div class="dashboard-card-header">
+                            <div>
+                                <h2>Projects</h2>
+                                <p>@Model.Projects.Count result@(Model.Projects.Count == 1 ? "" : "s").</p>
+                            </div>
+                        </div>
+                        <div class="activity-list">
+                            @foreach (var project in Model.Projects)
+                            {
+                                <a asp-controller="Projects" asp-action="Dashboard" asp-route-id="@project.Id" class="quick-action">
+                                    <div class="quick-action-icon"><i class="bi bi-kanban"></i></div>
+                                    <div>
+                                        <strong>@project.Name</strong>
+                                        <span>@project.Owner.FirstName @project.Owner.LastName · @project.Status · @(project.Team?.Name ?? "No team")</span>
+                                    </div>
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-6">
+                    <div class="dashboard-card">
+                        <div class="dashboard-card-header">
+                            <div>
+                                <h2>Tasks</h2>
+                                <p>@Model.Tasks.Count result@(Model.Tasks.Count == 1 ? "" : "s").</p>
+                            </div>
+                        </div>
+                        <div class="activity-list">
+                            @foreach (var task in Model.Tasks)
+                            {
+                                <a asp-controller="Tasks" asp-action="Details" asp-route-id="@task.Id" class="quick-action">
+                                    <div class="quick-action-icon"><i class="bi bi-check2-square"></i></div>
+                                    <div>
+                                        <strong>@task.Title</strong>
+                                        <span>@task.Project.Name · @task.Status · @(task.AssignedUser is null ? "Unassigned" : $"{task.AssignedUser.FirstName} {task.AssignedUser.LastName}")</span>
+                                    </div>
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-6">
+                    <div class="dashboard-card">
+                        <div class="dashboard-card-header">
+                            <div>
+                                <h2>Teams</h2>
+                                <p>@Model.Teams.Count result@(Model.Teams.Count == 1 ? "" : "s").</p>
+                            </div>
+                        </div>
+                        <div class="activity-list">
+                            @foreach (var team in Model.Teams)
+                            {
+                                <a asp-controller="Teams" asp-action="Details" asp-route-id="@team.Id" class="quick-action">
+                                    <div class="quick-action-icon"><i class="bi bi-people"></i></div>
+                                    <div>
+                                        <strong>@team.Name</strong>
+                                        <span>@team.Manager.FirstName @team.Manager.LastName · @team.Members.Count members · @team.Projects.Count projects</span>
+                                    </div>
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-6">
+                    <div class="dashboard-card">
+                        <div class="dashboard-card-header">
+                            <div>
+                                <h2>Users</h2>
+                                <p>@Model.Users.Count result@(Model.Users.Count == 1 ? "" : "s").</p>
+                            </div>
+                        </div>
+                        <div class="activity-list">
+                            @foreach (var user in Model.Users)
+                            {
+                                <div class="activity-item">
+                                    <div class="activity-icon"><i class="bi bi-person"></i></div>
+                                    <div class="activity-content">
+                                        <strong>@user.FirstName @user.LastName</strong>
+                                        <p>@user.Email</p>
+                                        <span>@(user.IsActive ? "Active" : "Inactive")</span>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    }
+</div>

@@ -1,0 +1,121 @@
+@model LoginViewModel
+@{
+    ViewData["Title"] = "Sign In";
+}
+
+<div class="auth-page">
+
+    <div class="auth-container">
+
+        <div class="auth-card">
+
+            <div class="auth-header">
+
+                <a asp-controller="Home"
+                   asp-action="Index"
+                   class="auth-logo">
+                    YourPlatform
+                </a>
+
+                <h1>Welcome back</h1>
+
+                <p>
+                    Sign in to your account to continue.
+                </p>
+
+            </div>
+
+
+            <form method="post"
+                  class="auth-form">
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                <div class="form-group">
+
+                    <label asp-for="Email"
+                           class="form-label"></label>
+
+                    <input asp-for="Email"
+                           class="form-control"
+                           placeholder="you@example.com"
+                           autocomplete="email" />
+
+                    <span asp-validation-for="Email" class="field-validation-error"></span>
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <div class="form-label-row">
+
+                        <label asp-for="Password"
+                               class="form-label"></label>
+
+                        <a asp-action="ForgotPassword"
+                           class="auth-link">
+                            Forgot password?
+                        </a>
+
+                    </div>
+
+                    <input asp-for="Password"
+                           class="form-control"
+                           placeholder="Enter your password"
+                           autocomplete="current-password" />
+
+                    <span asp-validation-for="Password" class="field-validation-error"></span>
+
+                </div>
+
+
+                <div class="auth-options">
+
+                    <label class="remember-me">
+
+                        <input asp-for="RememberMe" />
+
+                        <span>
+                            Remember me
+                        </span>
+
+                    </label>
+
+                </div>
+
+
+                <button type="submit"
+                        class="btn btn-primary auth-submit">
+                    Sign In
+                </button>
+
+            </form>
+
+
+            <div class="auth-divider">
+                <span>OR</span>
+            </div>
+
+
+            <div class="auth-footer">
+
+                <p>
+                    Don't have an account?
+                    <a asp-action="Register"
+                       class="auth-link">
+                        Create one
+                    </a>
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

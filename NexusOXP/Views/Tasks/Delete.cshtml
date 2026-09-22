@@ -1,0 +1,45 @@
+@model ProjectTask
+@{
+    ViewData["Title"] = "Delete Task";
+}
+
+<div class="dashboard-page">
+    <section class="dashboard-header">
+        <div class="dashboard-header-content">
+            <div>
+                <span class="section-label">Tasks</span>
+                <h1>Delete Task</h1>
+                <p>This action permanently removes the task from the project.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="dashboard-section">
+        <div class="dashboard-card">
+            <div class="delete-summary">
+                <h2>@Model.Title</h2>
+                <p>@(Model.Description ?? "No description")</p>
+
+                <dl class="project-detail-list">
+                    <dt>Project</dt>
+                    <dd>@Model.Project.Name</dd>
+
+                    <dt>Assigned</dt>
+                    <dd>@(Model.AssignedUser is null ? "Unassigned" : $"{Model.AssignedUser.FirstName} {Model.AssignedUser.LastName}")</dd>
+
+                    <dt>Status</dt>
+                    <dd>@Model.Status</dd>
+
+                    <dt>Priority</dt>
+                    <dd>@Model.Priority</dd>
+                </dl>
+
+                <form asp-action="Delete" asp-route-id="@Model.Id" method="post" class="form-actions">
+                    @Html.AntiForgeryToken()
+                    <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-primary">Cancel</a>
+                    <button type="submit" class="btn btn-danger">Delete Task</button>
+                </form>
+            </div>
+        </div>
+    </section>
+</div>

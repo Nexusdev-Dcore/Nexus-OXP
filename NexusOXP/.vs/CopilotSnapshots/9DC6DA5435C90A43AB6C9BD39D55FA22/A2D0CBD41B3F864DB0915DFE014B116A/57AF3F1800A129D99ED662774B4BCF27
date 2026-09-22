@@ -1,0 +1,592 @@
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using NexusOXP.Authorization;
+using NexusOXP.Data;
+using NexusOXP.Models;
+using NexusOXP.ViewModels;
+using NexusOXP.Services;
+
+namespace NexusOXP.Controllers
+{
+    public class AccountController : Controller
+    {
+        private const int PasswordResetCodeLength = 6;
+        private const int PasswordResetCodeLifetimeMinutes = 10;
+
+        private readonly ApplicationDbContext _context;
+        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly SignInManager<ApplicationUser> _signInManager;
+        private readonly IEmailSender _emailSender;
+
+        public AccountController(
+            ApplicationDbContext context,
+            UserManager<ApplicationUser> userManager,
+            SignInManager<ApplicationUser> signInManager,
+            IEmailSender emailSender)
+        {
+            _context = context;
+            _userManager = userManager;
+            _signInManager = signInManager;
+            _emailSender = emailSender;
+        }
+
+        private static string BuildPasswordResetCodeKey(string email)
+        {
+            return $"password-reset-code:{email.Trim().ToLowerInvariant()}";
+        }
+
+        private static string BuildPasswordResetVerifiedKey(string email)
+        {
+            return $"password-reset-verified:{email.Trim().ToLowerInvariant()}";
+        }
+
+        private static string GeneratePasswordResetCode()
+        {
+            return Random.Shared.Next(100000, 999999).ToString();
+        }
+
+        private bool IsPasswordResetApproved(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                return false;
+            }
+
+            var storedValue = HttpContext.Session.GetString(BuildPasswordResetVerifiedKey(email));
+            return !string.IsNullOrWhiteSpace(storedValue);
+        }
+
+        private void ClearPasswordResetSession(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                return;
+            }
+
+            HttpContext.Session.Remove(BuildPasswordResetCodeKey(email));
+            HttpContext.Session.Remove(BuildPasswordResetVerifiedKey(email));
+
+            // Also clear persisted code on the user record so the reset cannot be reused
+            var user = _userManager.FindByEmailAsync(email.Trim()).GetAwaiter().GetResult();
+            if (user is not null)
+            {
+                user.PasswordResetCode = null;
+                user.PasswordResetCodeExpiresAt = null;
+                // best-effort update; this is synchronous context-safe since called from controller action helpers
+                _userManager.UpdateAsync(user).GetAwaiter().GetResult();
+            }
+        }
+
+        private bool TryValidatePasswordResetCode(string email, string code, out string? storedCode)
+        {
+            storedCode = null;
+            if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(code))
+            {
+                return false;
+            }
+
+            // First try session-based storage for backward-compatibility
+            var storedValue = HttpContext.Session.GetString(BuildPasswordResetCodeKey(email));
+            if (!string.IsNullOrWhiteSpace(storedValue))
+            {
+                var parts = storedValue.Split('|');
+                if (parts.Length == 2 && DateTimeOffset.TryParse(parts[1], out var expiresAt))
+                {
+                    if (expiresAt > DateTimeOffset.UtcNow)
+                    {
+                        storedCode = parts[0];
+                        return string.Equals(storedCode, code.Trim(), StringComparison.Ordinal);
+                    }
+                }
+
+                HttpContext.Session.Remove(BuildPasswordResetCodeKey(email));
+                return false;
+            }
+
+            // Fall back to persisted user-based storage so the flow works across devices/browsers
+            var user = _userManager.FindByEmailAsync(email.Trim()).GetAwaiter().GetResult();
+            if (user is null || string.IsNullOrWhiteSpace(user.PasswordResetCode) || !user.PasswordResetCodeExpiresAt.HasValue)
+            {
+                return false;
+            }
+
+            if (user.PasswordResetCodeExpiresAt.Value <= DateTimeOffset.UtcNow)
+            {
+                // clear expired code
+                user.PasswordResetCode = null;
+                user.PasswordResetCodeExpiresAt = null;
+                _userManager.UpdateAsync(user).GetAwaiter().GetResult();
+                return false;
+            }
+
+            storedCode = user.PasswordResetCode;
+            return string.Equals(storedCode, code.Trim(), StringComparison.Ordinal);
+        }
+
+        [HttpGet]
+        public IActionResult Login()
+        {
+            return View(new LoginViewModel());
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Login(LoginViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            var result = await _signInManager.PasswordSignInAsync(
+                model.Email,
+                model.Password,
+                model.RememberMe,
+                lockoutOnFailure: false);
+
+            if (!result.Succeeded)
+            {
+                ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+                return View(model);
+            }
+
+            return RedirectToAction("Index", "Dashboard");
+        }
+
+        [HttpGet]
+        public IActionResult Register()
+        {
+            return View(new RegisterViewModel());
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Register(RegisterViewModel model)
+        {
+            if (!model.AcceptTerms)
+            {
+                ModelState.AddModelError(nameof(RegisterViewModel.AcceptTerms), "You must accept the terms.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            var user = new ApplicationUser
+            {
+                UserName = model.Email,
+                Email = model.Email,
+                FirstName = model.FirstName,
+                LastName = model.LastName
+            };
+
+            var result = await _userManager.CreateAsync(user, model.Password);
+
+            if (!result.Succeeded)
+            {
+                foreach (var error in result.Errors)
+                {
+                    ModelState.AddModelError(string.Empty, error.Description);
+                }
+
+                return View(model);
+            }
+
+            await _userManager.AddToRoleAsync(user, AppRoles.Member);
+            await _signInManager.SignInAsync(user, isPersistent: false);
+            TempData["StatusMessage"] = "Account created successfully.";
+            return RedirectToAction("Index", "Dashboard");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Logout()
+        {
+            await _signInManager.SignOutAsync();
+            return RedirectToAction("Index", "Home");
+        }
+
+        [Authorize]
+        [HttpGet("/profile")]
+        public async Task<IActionResult> Profile()
+        {
+            var model = await BuildAccountOverviewModel();
+            return View(model);
+        }
+
+        [Authorize]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateProfile(AccountOverviewViewModel model)
+        {
+            ClearPasswordValidation();
+
+            if (!ModelState.IsValid)
+            {
+                return View(nameof(Profile), await BuildAccountOverviewModel(model.Profile));
+            }
+
+            var user = await _userManager.GetUserAsync(User);
+            if (user is null)
+            {
+                return Challenge();
+            }
+
+            var requestedEmail = model.Profile.Email.Trim();
+            if (!string.Equals(user.Email, requestedEmail, StringComparison.OrdinalIgnoreCase))
+            {
+                var existingUser = await _userManager.FindByEmailAsync(requestedEmail);
+                if (existingUser is not null && existingUser.Id != user.Id)
+                {
+                    ModelState.AddModelError(nameof(model.Profile.Email), "That email address is already in use.");
+                    return View(nameof(Profile), await BuildAccountOverviewModel(model.Profile));
+                }
+
+                user.Email = requestedEmail;
+                user.UserName = requestedEmail;
+            }
+
+            user.FirstName = model.Profile.FirstName.Trim();
+            user.LastName = model.Profile.LastName.Trim();
+            user.PhoneNumber = string.IsNullOrWhiteSpace(model.Profile.PhoneNumber)
+                ? null
+                : model.Profile.PhoneNumber.Trim();
+            user.ProfileImage = string.IsNullOrWhiteSpace(model.Profile.ProfileImage)
+                ? null
+                : model.Profile.ProfileImage.Trim();
+
+            var result = await _userManager.UpdateAsync(user);
+            if (!result.Succeeded)
+            {
+                AddIdentityErrors(result);
+                return View(nameof(Profile), await BuildAccountOverviewModel(model.Profile));
+            }
+
+            await _signInManager.RefreshSignInAsync(user);
+            TempData["StatusMessage"] = "Profile updated successfully.";
+            return RedirectToAction(nameof(Profile));
+        }
+
+        [Authorize]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ChangePassword(AccountOverviewViewModel model)
+        {
+            ClearProfileValidation();
+
+            if (!ModelState.IsValid)
+            {
+                return View(nameof(Profile), await BuildAccountOverviewModel(password: model.Password));
+            }
+
+            var user = await _userManager.GetUserAsync(User);
+            if (user is null)
+            {
+                return Challenge();
+            }
+
+            var result = await _userManager.ChangePasswordAsync(
+                user,
+                model.Password.CurrentPassword,
+                model.Password.NewPassword);
+
+            if (!result.Succeeded)
+            {
+                AddIdentityErrors(result);
+                return View(nameof(Profile), await BuildAccountOverviewModel(password: model.Password));
+            }
+
+            await _signInManager.RefreshSignInAsync(user);
+            TempData["StatusMessage"] = "Password changed successfully.";
+            return RedirectToAction(nameof(Profile));
+        }
+
+        [Authorize]
+        public async Task<IActionResult> Settings()
+        {
+            var model = await BuildAccountOverviewModel();
+            return View(model);
+        }
+
+        [Authorize]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SendTestEmail()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user is null || string.IsNullOrWhiteSpace(user.Email))
+            {
+                return Challenge();
+            }
+
+            var message = $@"
+                <p>Hello {user.FirstName} {user.LastName},</p>
+                <p>This is a test email from NexusOXP.</p>
+                <p>If you received this message, the Gmail SMTP configuration is working correctly.</p>
+                <p>Sent at: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC</p>
+            ";
+
+            await _emailSender.SendEmailAsync(user.Email, "NexusOXP SMTP Test", message, isHtml: true);
+
+            TempData["StatusMessage"] = "A test email has been sent to your account.";
+            return RedirectToAction(nameof(Profile));
+        }
+
+        [HttpGet]
+        public IActionResult ForgotPassword()
+        {
+            return View(new ForgotPasswordViewModel());
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ForgotPassword(ForgotPasswordViewModel model)
+        {
+            if (!string.IsNullOrWhiteSpace(model.Code) || !string.IsNullOrWhiteSpace(model.Password) || !string.IsNullOrWhiteSpace(model.ConfirmPassword))
+            {
+                if (!ModelState.IsValid)
+                {
+                    model.CodeSent = true;
+                    return View(model);
+                }
+
+                var user = await _userManager.FindByEmailAsync(model.Email.Trim());
+                if (user is null)
+                {
+                    TempData["StatusMessage"] = "The password reset request is invalid or expired.";
+                    return RedirectToAction(nameof(Login));
+                }
+
+                if (!TryValidatePasswordResetCode(model.Email, model.Code, out _))
+                {
+                    ModelState.AddModelError(string.Empty, "The verification code is invalid or expired.");
+                    model.CodeSent = true;
+                    return View(model);
+                }
+
+                var resetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
+                var passwordResult = await _userManager.ResetPasswordAsync(user, resetToken, model.Password);
+                if (!passwordResult.Succeeded)
+                {
+                    foreach (var error in passwordResult.Errors)
+                    {
+                        ModelState.AddModelError(string.Empty, error.Description);
+                    }
+
+                    model.CodeSent = true;
+                    return View(model);
+                }
+
+                ClearPasswordResetSession(model.Email);
+                TempData["StatusMessage"] = "Your password has been reset successfully.";
+                return RedirectToAction(nameof(Login));
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            var existingUser = await _userManager.FindByEmailAsync(model.Email.Trim());
+            if (existingUser is null)
+            {
+                TempData["StatusMessage"] = "If that email is registered, a password reset code has been sent.";
+                return RedirectToAction(nameof(Login));
+            }
+
+            var code = GeneratePasswordResetCode();
+            var expiresAt = DateTimeOffset.UtcNow.AddMinutes(PasswordResetCodeLifetimeMinutes);
+            HttpContext.Session.SetString(BuildPasswordResetCodeKey(existingUser.Email!), $"{code}|{expiresAt:O}");
+            HttpContext.Session.Remove(BuildPasswordResetVerifiedKey(existingUser.Email!));
+
+            var emailBody = $@"
+                <p>Hello {existingUser.FirstName} {existingUser.LastName},</p>
+                <p>We received a request to reset your NexusOXP password.</p>
+                <p>Your verification code is: <strong>{code}</strong></p>
+                <p>This code expires in {PasswordResetCodeLifetimeMinutes} minutes.</p>
+                <p>If you did not request this, you can ignore this email.</p>
+            ";
+
+            await _emailSender.SendEmailAsync(existingUser.Email!, "Your NexusOXP password reset code", emailBody, isHtml: true);
+
+            model.CodeSent = true;
+            model.Email = existingUser.Email!;
+            TempData["StatusMessage"] = "A 6-digit code has been sent to your email.";
+            return View(model);
+        }
+
+        [HttpGet]
+        public IActionResult ResetPassword(string? email = null, string? token = null)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                TempData["StatusMessage"] = "The password reset request is invalid or expired.";
+                return RedirectToAction(nameof(Login));
+            }
+
+            var resetCode = HttpContext.Session.GetString(BuildPasswordResetCodeKey(email));
+            if (string.IsNullOrWhiteSpace(resetCode))
+            {
+                TempData["StatusMessage"] = "Your password reset session has expired. Please request a new code.";
+                return RedirectToAction(nameof(Login));
+            }
+
+            return View(new ResetPasswordViewModel { Email = email, Token = token ?? string.Empty });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ResetPassword(ResetPasswordViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            var user = await _userManager.FindByEmailAsync(model.Email.Trim());
+            if (user is null)
+            {
+                TempData["StatusMessage"] = "The password reset request is invalid or expired.";
+                return RedirectToAction(nameof(Login));
+            }
+
+            if (!TryValidatePasswordResetCode(model.Email, model.Code, out _))
+            {
+                ModelState.AddModelError(string.Empty, "The verification code is invalid or expired.");
+                return View(model);
+            }
+
+            var result = await _userManager.ResetPasswordAsync(user, await _userManager.GeneratePasswordResetTokenAsync(user), model.Password);
+            if (!result.Succeeded)
+            {
+                foreach (var error in result.Errors)
+                {
+                    ModelState.AddModelError(string.Empty, error.Description);
+                }
+
+                return View(model);
+            }
+
+            ClearPasswordResetSession(model.Email);
+            HttpContext.Session.SetString(BuildPasswordResetVerifiedKey(model.Email), "verified");
+            TempData["StatusMessage"] = "Your password has been reset successfully.";
+            return RedirectToAction(nameof(Login));
+        }
+
+        public IActionResult AccessDenied()
+        {
+            return View();
+        }
+
+        private async Task<AccountOverviewViewModel> BuildAccountOverviewModel(
+            ProfileDetailsViewModel? profile = null,
+            ChangePasswordViewModel? password = null)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user is null)
+            {
+                return new AccountOverviewViewModel();
+            }
+
+            var roles = await _userManager.GetRolesAsync(user);
+            var userId = user.Id;
+
+            var myProjects = await _context.Projects
+                .Include(project => project.Team)
+                .Include(project => project.Tasks)
+                .Include(project => project.Members)
+                .AsNoTracking()
+                .Where(project =>
+                    project.OwnerId == userId ||
+                    project.Members.Any(member => member.UserId == userId))
+                .OrderByDescending(project => project.CreatedAt)
+                .Take(6)
+                .ToListAsync();
+
+            var myTasksQuery = _context.Tasks
+                .Include(task => task.Project)
+                .AsNoTracking()
+                .Where(task => task.AssignedUserId == userId || task.CreatedById == userId);
+
+            var myTasks = await myTasksQuery
+                .Where(task => task.Status != ProjectTaskStatus.Completed)
+                .OrderBy(task => task.DueDate ?? DateTime.MaxValue)
+                .ThenByDescending(task => task.Priority)
+                .Take(8)
+                .ToListAsync();
+
+            var completedTasks = await myTasksQuery
+                .Where(task => task.Status == ProjectTaskStatus.Completed)
+                .OrderByDescending(task => task.UpdatedAt)
+                .Take(8)
+                .ToListAsync();
+
+            var recentActivity = await _context.ActivityLogs
+                .Include(activity => activity.Actor)
+                .AsNoTracking()
+                .Where(activity => activity.ActorId == userId)
+                .OrderByDescending(activity => activity.CreatedAt)
+                .Take(8)
+                .ToListAsync();
+
+            return new AccountOverviewViewModel
+            {
+                FullName = $"{user.FirstName} {user.LastName}".Trim(),
+                Email = user.Email ?? string.Empty,
+                ProfileImage = user.ProfileImage ?? string.Empty,
+                PhoneNumber = user.PhoneNumber ?? "Not set",
+                CreatedAt = user.CreatedAt,
+                IsActive = user.IsActive,
+                Roles = roles.ToList(),
+                Profile = profile ?? new ProfileDetailsViewModel
+                {
+                    FirstName = user.FirstName,
+                    LastName = user.LastName,
+                    Email = user.Email ?? string.Empty,
+                    PhoneNumber = user.PhoneNumber,
+                    ProfileImage = user.ProfileImage
+                },
+                Password = password ?? new ChangePasswordViewModel(),
+                MyProjects = myProjects,
+                MyTasks = myTasks,
+                CompletedTasks = completedTasks,
+                RecentActivity = recentActivity,
+                MyProjectsCount = await _context.Projects.CountAsync(project =>
+                    project.OwnerId == userId ||
+                    project.Members.Any(member => member.UserId == userId)),
+                MyTasksCount = await myTasksQuery.CountAsync(task => task.Status != ProjectTaskStatus.Completed),
+                CompletedTasksCount = await myTasksQuery.CountAsync(task => task.Status == ProjectTaskStatus.Completed),
+                ActivityCount = await _context.ActivityLogs.CountAsync(activity => activity.ActorId == userId)
+            };
+        }
+
+        private void ClearProfileValidation()
+        {
+            ClearValidationForPrefix(nameof(AccountOverviewViewModel.Profile));
+        }
+
+        private void ClearPasswordValidation()
+        {
+            ClearValidationForPrefix(nameof(AccountOverviewViewModel.Password));
+        }
+
+        private void ClearValidationForPrefix(string prefix)
+        {
+            foreach (var key in ModelState.Keys.Where(key => key.StartsWith($"{prefix}.", StringComparison.Ordinal)).ToList())
+            {
+                ModelState.Remove(key);
+            }
+        }
+
+        private void AddIdentityErrors(IdentityResult result)
+        {
+            foreach (var error in result.Errors)
+            {
+                ModelState.AddModelError(string.Empty, error.Description);
+            }
+        }
+    }
+}

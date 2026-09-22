@@ -1,0 +1,35 @@
+@model TeamFormViewModel
+
+<div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+<input asp-for="Id" type="hidden" />
+
+<div class="row g-3">
+    <div class="col-12">
+        <label asp-for="Name" class="form-label"></label>
+        <input asp-for="Name" class="form-control" placeholder="Development Team" />
+        <span asp-validation-for="Name" class="field-validation-error"></span>
+    </div>
+
+    <div class="col-12">
+        <label asp-for="Description" class="form-label"></label>
+        <textarea asp-for="Description" class="form-control" placeholder="Describe the team's responsibility and scope."></textarea>
+        <span asp-validation-for="Description" class="field-validation-error"></span>
+    </div>
+
+    <div class="col-md-6">
+        <label asp-for="ManagerId" class="form-label"></label>
+        <select asp-for="ManagerId" asp-items="Model.UserOptions" class="form-select">
+            <option value="">Select manager</option>
+        </select>
+        <span asp-validation-for="ManagerId" class="field-validation-error"></span>
+    </div>
+
+    <div class="col-md-6">
+        <label asp-for="ProjectId" class="form-label"></label>
+        <select asp-for="ProjectId" asp-items="Model.ProjectOptions" class="form-select">
+            <option value="">No project assigned</option>
+        </select>
+        <span asp-validation-for="ProjectId" class="field-validation-error"></span>
+    </div>
+</div>

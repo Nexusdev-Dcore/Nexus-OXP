@@ -1,0 +1,147 @@
+@model IReadOnlyList<ProjectTask>
+@{
+    ViewData["Title"] = "Kanban Board";
+    var projectId = ViewBag.ProjectId as int?;
+    var projectName = ViewBag.ProjectName as string;
+    var canManageTasks = ViewBag.CanManageTasks is true;
+    var lanes = new[]
+    {
+        ProjectTaskStatus.Todo,
+        ProjectTaskStatus.InProgress,
+        ProjectTaskStatus.Review,
+        ProjectTaskStatus.Completed
+    };
+    var currentUrl = Context.Request.Path + Context.Request.QueryString;
+}
+
+<div class="dashboard-page">
+    <section class="dashboard-header">
+        <div class="dashboard-header-content">
+            <div>
+                <span class="section-label">Kanban Board</span>
+                <h1>@(projectName is null ? "Task Board" : projectName)</h1>
+                <p>Move tasks through Todo, In Progress, Review, and Completed.</p>
+            </div>
+
+            <div class="dashboard-header-actions">
+                <a asp-action="Index" asp-route-projectId="@projectId" class="btn btn-outline-primary">
+                    <i class="bi bi-table"></i>
+                    List
+                </a>
+
+                @if (projectId.HasValue)
+                {
+                    <a asp-controller="Projects" asp-action="Dashboard" asp-route-id="@projectId" class="btn btn-outline-primary">
+                        <i class="bi bi-speedometer2"></i>
+                        Project
+                    </a>
+                }
+
+                @if (canManageTasks)
+                {
+                    <a asp-action="Create" asp-route-projectId="@projectId" class="btn btn-primary">
+                        <i class="bi bi-plus-lg"></i>
+                        New Task
+                    </a>
+                }
+            </div>
+        </div>
+    </section>
+
+    <section class="dashboard-section kanban-section">
+        <div class="kanban-board">
+            @foreach (var lane in lanes)
+            {
+                var laneTasks = Model.Where(task => task.Status == lane).ToList();
+                <section class="kanban-column">
+                    <div class="kanban-column-header">
+                        <div>
+                            <h2>@lane</h2>
+                            <span>@laneTasks.Count task@(laneTasks.Count == 1 ? "" : "s")</span>
+                        </div>
+                    </div>
+
+                    <div class="kanban-card-list">
+                        @if (laneTasks.Count == 0)
+                        {
+                            <div class="kanban-empty">No tasks</div>
+                        }
+                        else
+                        {
+                            @foreach (var task in laneTasks)
+                            {
+                                var previousStatus = task.Status switch
+                                {
+                                    ProjectTaskStatus.InProgress => ProjectTaskStatus.Todo,
+                                    ProjectTaskStatus.Review => ProjectTaskStatus.InProgress,
+                                    ProjectTaskStatus.Completed => ProjectTaskStatus.Review,
+                                    _ => (ProjectTaskStatus?)null
+                                };
+                                var nextStatus = task.Status switch
+                                {
+                                    ProjectTaskStatus.Todo => ProjectTaskStatus.InProgress,
+                                    ProjectTaskStatus.InProgress => ProjectTaskStatus.Review,
+                                    ProjectTaskStatus.Review => ProjectTaskStatus.Completed,
+                                    _ => (ProjectTaskStatus?)null
+                                };
+
+                                <article class="kanban-card">
+                                    <div class="kanban-card-top">
+                                        <span class="badge badge-warning">@task.Priority</span>
+                                        <a asp-action="Details" asp-route-id="@task.Id" class="btn btn-sm btn-light" aria-label="View task">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                    </div>
+
+                                    <h3>@task.Title</h3>
+                                    <p>@(task.Description ?? "No description")</p>
+
+                                    <div class="kanban-meta">
+                                        <span>
+                                            <i class="bi bi-folder2-open"></i>
+                                            @task.Project.Name
+                                        </span>
+                                        <span>
+                                            <i class="bi bi-person"></i>
+                                            @(task.AssignedUser is null ? "Unassigned" : $"{task.AssignedUser.FirstName} {task.AssignedUser.LastName}")
+                                        </span>
+                                        <span>
+                                            <i class="bi bi-calendar-event"></i>
+                                            @(task.DueDate?.ToString("MMM d, yyyy") ?? "No due date")
+                                        </span>
+                                    </div>
+
+                                    <div class="kanban-card-actions">
+                                        @if (previousStatus.HasValue)
+                                        {
+                                            <form asp-action="ChangeStatus" asp-route-id="@task.Id" method="post">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="status" value="@previousStatus.Value" />
+                                                <input type="hidden" name="returnUrl" value="@currentUrl" />
+                                                <button type="submit" class="btn btn-sm btn-light" aria-label="Move task back">
+                                                    <i class="bi bi-arrow-left"></i>
+                                                </button>
+                                            </form>
+                                        }
+
+                                        @if (nextStatus.HasValue)
+                                        {
+                                            <form asp-action="ChangeStatus" asp-route-id="@task.Id" method="post">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="status" value="@nextStatus.Value" />
+                                                <input type="hidden" name="returnUrl" value="@currentUrl" />
+                                                <button type="submit" class="btn btn-sm btn-primary" aria-label="Move task forward">
+                                                    <i class="bi bi-arrow-right"></i>
+                                                </button>
+                                            </form>
+                                        }
+                                    </div>
+                                </article>
+                            }
+                        }
+                    </div>
+                </section>
+            }
+        </div>
+    </section>
+</div>

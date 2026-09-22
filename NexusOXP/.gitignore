@@ -1,0 +1,12 @@
+bin/
+obj/
+node_modules/
+.wrangler/
+.wrangler-config/
+.env
+.env.*
+!.env.example
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*

@@ -1,0 +1,196 @@
+@model RegisterViewModel
+@{
+    ViewData["Title"] = "Create Account";
+}
+
+<div class="auth-page">
+
+    <div class="auth-container">
+
+        <div class="auth-card auth-card-register">
+
+            <div class="auth-header">
+
+                <a asp-controller="Home"
+                   asp-action="Index"
+                   class="auth-logo">
+                    YourPlatform
+                </a>
+
+                <h1>Create your account</h1>
+
+                <p>
+                    Get started by creating your account.
+                </p>
+
+            </div>
+
+
+            <form method="post"
+                  class="auth-form">
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                <div class="row g-3">
+
+                    <div class="col-md-6">
+
+                        <div class="form-group">
+
+                            <label asp-for="FirstName"
+                                   class="form-label"></label>
+
+                            <input asp-for="FirstName"
+                                   class="form-control"
+                                   placeholder="John"
+                                   autocomplete="given-name" />
+
+                            <span asp-validation-for="FirstName" class="field-validation-error"></span>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="col-md-6">
+
+                        <div class="form-group">
+
+                            <label asp-for="LastName"
+                                   class="form-label"></label>
+
+                            <input asp-for="LastName"
+                                   class="form-control"
+                                   placeholder="Doe"
+                                   autocomplete="family-name" />
+
+                            <span asp-validation-for="LastName" class="field-validation-error"></span>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="col-12">
+
+                        <div class="form-group">
+
+                            <label asp-for="Email"
+                                   class="form-label"></label>
+
+                            <input asp-for="Email"
+                                   class="form-control"
+                                   placeholder="you@example.com"
+                                   autocomplete="email" />
+
+                            <span asp-validation-for="Email" class="field-validation-error"></span>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="col-12">
+
+                        <div class="form-group">
+
+                            <label asp-for="Password"
+                                   class="form-label"></label>
+
+                            <input asp-for="Password"
+                                   class="form-control"
+                                   placeholder="Create a password"
+                                   autocomplete="new-password" />
+
+                            <div class="password-hint">
+                                Use at least 8 characters.
+                            </div>
+
+                            <span asp-validation-for="Password" class="field-validation-error"></span>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="col-12">
+
+                        <div class="form-group">
+
+                            <label asp-for="ConfirmPassword"
+                                   class="form-label"></label>
+
+                            <input asp-for="ConfirmPassword"
+                                   class="form-control"
+                                   placeholder="Confirm your password"
+                                   autocomplete="new-password" />
+
+                            <span asp-validation-for="ConfirmPassword" class="field-validation-error"></span>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="col-12">
+
+                        <label class="terms-checkbox">
+
+                            <input asp-for="AcceptTerms"
+                                   required />
+
+                            <span>
+                                I agree to the
+                                <a asp-controller="Home"
+                                   asp-action="Terms">
+                                    Terms of Service
+                                </a>
+                                and
+                                <a asp-controller="Home"
+                                   asp-action="Privacy">
+                                    Privacy Policy
+                                </a>.
+                            </span>
+
+                        </label>
+
+                        <span asp-validation-for="AcceptTerms" class="field-validation-error"></span>
+
+                    </div>
+
+
+                    <div class="col-12">
+
+                        <button type="submit"
+                                class="btn btn-primary auth-submit">
+                            Create Account
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </form>
+
+
+            <div class="auth-footer">
+
+                <p>
+                    Already have an account?
+                    <a asp-action="Login"
+                       class="auth-link">
+                        Sign in
+                    </a>
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,291 @@
+@model ProjectTask
+@{
+    ViewData["Title"] = Model.Title;
+    var canManageTasks = ViewBag.CanManageTasks is true;
+    var canUpdateStatus = ViewBag.CanUpdateStatus is true;
+    var currentUserId = ViewBag.CurrentUserId as string;
+    var commentForm = ViewBag.CommentForm as CommentFormViewModel ?? new CommentFormViewModel { TaskId = Model.Id };
+}
+
+<div class="dashboard-page">
+    <section class="dashboard-header">
+        <div class="dashboard-header-content">
+            <div>
+                <span class="section-label">Task Details</span>
+                <h1>@Model.Title</h1>
+                <p>@(Model.Description ?? "No description has been added yet.")</p>
+            </div>
+
+            <div class="dashboard-header-actions">
+                <a asp-action="Index" asp-route-projectId="@Model.ProjectId" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-left"></i>
+                    Tasks
+                </a>
+
+                <a asp-controller="Projects" asp-action="Dashboard" asp-route-id="@Model.ProjectId" class="btn btn-outline-primary">
+                    <i class="bi bi-speedometer2"></i>
+                    Project
+                </a>
+
+                @if (canManageTasks)
+                {
+                    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">
+                        <i class="bi bi-pencil"></i>
+                        Edit
+                    </a>
+
+                    <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-outline-primary">
+                        <i class="bi bi-trash"></i>
+                        Delete
+                    </a>
+                }
+            </div>
+        </div>
+    </section>
+
+    <section class="dashboard-stats">
+        <div class="row g-4">
+            <div class="col-lg-3 col-md-6">
+                <article class="dashboard-stat-card">
+                    <span class="stat-title">Status</span>
+                    <h2 class="stat-value stat-value-sm">@Model.Status</h2>
+                </article>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <article class="dashboard-stat-card">
+                    <span class="stat-title">Priority</span>
+                    <h2 class="stat-value stat-value-sm">@Model.Priority</h2>
+                </article>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <article class="dashboard-stat-card">
+                    <span class="stat-title">Assigned</span>
+                    <h2 class="stat-value stat-value-sm">@(Model.AssignedUser is null ? "Unassigned" : $"{Model.AssignedUser.FirstName} {Model.AssignedUser.LastName}")</h2>
+                </article>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <article class="dashboard-stat-card">
+                    <span class="stat-title">Due Date</span>
+                    <h2 class="stat-value stat-value-sm">@(Model.DueDate?.ToString("MMM d, yyyy") ?? "Not set")</h2>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <section class="dashboard-content">
+        <div class="row g-4">
+            <div class="col-lg-7">
+                <div class="dashboard-card">
+                    <div class="dashboard-card-header">
+                        <div>
+                            <h2>Overview</h2>
+                            <p>Core task information.</p>
+                        </div>
+                    </div>
+
+                    <dl class="project-detail-list">
+                        <dt>Project</dt>
+                        <dd>@Model.Project.Name</dd>
+
+                        <dt>Created By</dt>
+                        <dd>@Model.CreatedBy.FirstName @Model.CreatedBy.LastName</dd>
+
+                        <dt>Created</dt>
+                        <dd>@Model.CreatedAt.ToLocalTime().ToString("MMM d, yyyy")</dd>
+
+                        <dt>Updated</dt>
+                        <dd>@Model.UpdatedAt.ToLocalTime().ToString("MMM d, yyyy")</dd>
+
+                        <dt>Description</dt>
+                        <dd>@(Model.Description ?? "No description")</dd>
+                    </dl>
+                </div>
+            </div>
+
+            <div class="col-lg-5">
+                <div class="dashboard-card">
+                    <div class="dashboard-card-header">
+                        <div>
+                            <h2>Status</h2>
+                            <p>Move this task through the workflow.</p>
+                        </div>
+                    </div>
+
+                    @if (canUpdateStatus)
+                    {
+                        <form asp-action="ChangeStatus" asp-route-id="@Model.Id" method="post" class="status-form">
+                            @Html.AntiForgeryToken()
+                            <select name="status" class="form-select">
+                                @foreach (var status in Enum.GetValues<ProjectTaskStatus>())
+                                {
+                                    <option value="@status" selected="@(status == Model.Status)">@status</option>
+                                }
+                            </select>
+                            <button type="submit" class="btn btn-primary">Update Status</button>
+                        </form>
+                    }
+                    else
+                    {
+                        <p class="text-muted mb-0">You can view this task, but status updates are restricted.</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="dashboard-section">
+        <div class="dashboard-card">
+            <div class="dashboard-card-header">
+                <div>
+                    <h2>Attachments</h2>
+                    <p>@Model.Attachments.Count file@(Model.Attachments.Count == 1 ? "" : "s") attached to this task.</p>
+                </div>
+            </div>
+
+            <form asp-controller="Attachments" asp-action="Upload" method="post" enctype="multipart/form-data" class="stacked-form">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="taskId" value="@Model.Id" />
+
+                <label for="taskAttachment" class="form-label">File</label>
+                <input id="taskAttachment" name="file" type="file" class="form-control" />
+
+                <div class="form-actions mt-0">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-paperclip"></i>
+                        Upload
+                    </button>
+                </div>
+            </form>
+
+            @if (Model.Attachments.Count == 0)
+            {
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <i class="bi bi-paperclip"></i>
+                    </div>
+                    <h3>No attachments yet</h3>
+                    <p>Requirements, screenshots, and project files will appear here.</p>
+                </div>
+            }
+            else
+            {
+                <div class="activity-list attachment-list">
+                    @foreach (var attachment in Model.Attachments.OrderByDescending(attachment => attachment.CreatedAt))
+                    {
+                        var canDeleteAttachment = canManageTasks || attachment.UploadedById == currentUserId;
+                        <article class="activity-item attachment-item">
+                            <div class="activity-icon">
+                                <i class="bi bi-file-earmark"></i>
+                            </div>
+                            <div class="activity-content">
+                                <strong>@attachment.FileName</strong>
+                                <p>@Math.Round(attachment.FileSize / 1024.0, 1) KB</p>
+                                <span>
+                                    Uploaded by @attachment.UploadedBy.FirstName @attachment.UploadedBy.LastName
+                                    · @attachment.CreatedAt.ToLocalTime().ToString("MMM d, yyyy h:mm tt")
+                                </span>
+                            </div>
+                            <div class="comment-actions">
+                                <a asp-controller="Attachments" asp-action="Download" asp-route-id="@attachment.Id" class="btn btn-sm btn-light" aria-label="Download attachment">
+                                    <i class="bi bi-download"></i>
+                                </a>
+
+                                @if (canDeleteAttachment)
+                                {
+                                    <form asp-controller="Attachments" asp-action="Delete" asp-route-id="@attachment.Id" method="post" class="inline-action-form">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-sm btn-light" aria-label="Delete attachment">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                }
+                            </div>
+                        </article>
+                    }
+                </div>
+            }
+        </div>
+    </section>
+
+    <section class="dashboard-section">
+        <div class="dashboard-card">
+            <div class="dashboard-card-header">
+                <div>
+                    <h2>Comments</h2>
+                    <p>@Model.Comments.Count comment@(Model.Comments.Count == 1 ? "" : "s") on this task.</p>
+                </div>
+            </div>
+
+            <form asp-controller="Comments" asp-action="Create" method="post" class="stacked-form">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="TaskId" value="@commentForm.TaskId" />
+
+                <label for="commentContent" class="form-label">Comment</label>
+                <textarea id="commentContent" name="Content" class="form-control" rows="4" placeholder="Add an update, blocker, or decision.">@commentForm.Content</textarea>
+
+                <div class="form-actions mt-0">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-chat-left-text"></i>
+                        Post Comment
+                    </button>
+                </div>
+            </form>
+
+            @if (Model.Comments.Count == 0)
+            {
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <i class="bi bi-chat-left-text"></i>
+                    </div>
+                    <h3>No comments yet</h3>
+                    <p>Task discussion will appear here.</p>
+                </div>
+            }
+            else
+            {
+                <div class="activity-list comment-list">
+                    @foreach (var comment in Model.Comments.OrderByDescending(comment => comment.CreatedAt))
+                    {
+                        var canManageComment = canManageTasks || comment.AuthorId == currentUserId;
+                        <article class="activity-item comment-item">
+                            <div class="activity-icon">
+                                <i class="bi bi-chat-left-text"></i>
+                            </div>
+                            <div class="activity-content">
+                                <strong>@comment.Author.FirstName @comment.Author.LastName</strong>
+                                <p>@comment.Content</p>
+                                <span>
+                                    @comment.CreatedAt.ToLocalTime().ToString("MMM d, yyyy h:mm tt")
+                                    @if (comment.UpdatedAt > comment.CreatedAt.AddSeconds(1))
+                                    {
+                                        <text> · edited @comment.UpdatedAt.ToLocalTime().ToString("MMM d, yyyy h:mm tt")</text>
+                                    }
+                                </span>
+                            </div>
+
+                            @if (canManageComment)
+                            {
+                                <div class="comment-actions">
+                                    <a asp-controller="Comments" asp-action="Edit" asp-route-id="@comment.Id" class="btn btn-sm btn-light" aria-label="Edit comment">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+
+                                    <form asp-controller="Comments" asp-action="Delete" asp-route-id="@comment.Id" method="post" class="inline-action-form">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-sm btn-light" aria-label="Delete comment">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            }
+                        </article>
+                    }
+                </div>
+            }
+        </div>
+    </section>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

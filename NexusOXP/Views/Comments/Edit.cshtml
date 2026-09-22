@@ -1,0 +1,40 @@
+@model CommentFormViewModel
+@{
+    ViewData["Title"] = "Edit Comment";
+}
+
+<div class="dashboard-page">
+    <section class="dashboard-header">
+        <div class="dashboard-header-content">
+            <div>
+                <span class="section-label">Comments</span>
+                <h1>Edit Comment</h1>
+                <p>Update your task comment.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="dashboard-section">
+        <div class="dashboard-card">
+            <form asp-action="Edit" asp-route-id="@Model.Id" method="post" class="project-form">
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                <input asp-for="Id" type="hidden" />
+                <input asp-for="TaskId" type="hidden" />
+
+                <label asp-for="Content" class="form-label"></label>
+                <textarea asp-for="Content" class="form-control" rows="6"></textarea>
+                <span asp-validation-for="Content" class="field-validation-error"></span>
+
+                <div class="form-actions">
+                    <a asp-controller="Tasks" asp-action="Details" asp-route-id="@Model.TaskId" class="btn btn-outline-primary">Cancel</a>
+                    <button type="submit" class="btn btn-primary">Save Comment</button>
+                </div>
+            </form>
+        </div>
+    </section>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

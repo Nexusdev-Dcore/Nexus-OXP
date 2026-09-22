@@ -1,0 +1,56 @@
+@model IReadOnlyList<ProjectTask>
+@{
+    ViewData["Title"] = "Admin Tasks";
+}
+
+<div class="dashboard-page">
+    <section class="dashboard-header">
+        <div class="dashboard-header-content">
+            <div>
+                <span class="section-label">Admin</span>
+                <h1>Tasks</h1>
+                <p>All task records, owners, status, and attachment counts.</p>
+            </div>
+            <div class="dashboard-header-actions">
+                <a asp-area="Admin" asp-controller="Dashboard" asp-action="Index" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-left"></i>
+                    Admin
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <section class="dashboard-section">
+        <div class="dashboard-card table-responsive">
+            <table class="table dashboard-table align-middle">
+                <thead>
+                    <tr>
+                        <th>Task</th>
+                        <th>Project</th>
+                        <th>Assigned</th>
+                        <th>Status</th>
+                        <th>Priority</th>
+                        <th>Files</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var task in Model)
+                    {
+                        <tr>
+                            <td>@task.Title</td>
+                            <td>@task.Project.Name</td>
+                            <td>@(task.AssignedUser is null ? "Unassigned" : $"{task.AssignedUser.FirstName} {task.AssignedUser.LastName}")</td>
+                            <td>@task.Status</td>
+                            <td>@task.Priority</td>
+                            <td>@task.Attachments.Count</td>
+                            <td class="text-end">
+                                <a asp-area="" asp-controller="Tasks" asp-action="Details" asp-route-id="@task.Id" class="btn btn-sm btn-outline-primary">Open</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>

@@ -1,0 +1,173 @@
+@model IReadOnlyList<Project>
+@{
+    ViewData["Title"] = "Projects";
+    var canManageProjects = User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Manager);
+    var selectedStatus = ViewBag.Status as ProjectStatus?;
+    var selectedPriority = ViewBag.Priority as ProjectPriority?;
+    var selectedOwnerId = ViewBag.OwnerId as string;
+    var selectedTeamId = ViewBag.TeamId as int?;
+    var ownerOptions = ViewBag.OwnerOptions as IReadOnlyList<SelectListItem> ?? [];
+    var teamOptions = ViewBag.TeamOptions as IReadOnlyList<SelectListItem> ?? [];
+    var overdue = ViewBag.Overdue is true;
+}
+
+<div class="dashboard-page">
+    <section class="dashboard-header">
+        <div class="dashboard-header-content">
+            <div>
+                <span class="section-label">Projects</span>
+                <h1>Project Workspace</h1>
+                <p>Track active work, ownership, timelines, and project priority.</p>
+            </div>
+
+            @if (canManageProjects)
+            {
+                <div class="dashboard-header-actions">
+                    <a asp-action="Create" class="btn btn-primary">
+                        <i class="bi bi-plus-lg"></i>
+                        New Project
+                    </a>
+                </div>
+            }
+        </div>
+    </section>
+
+    <section class="dashboard-section">
+        <div class="dashboard-card">
+            <form asp-action="Index" method="get" class="filter-form mb-4">
+                <div class="filter-field filter-field-wide">
+                    <label for="q" class="form-label">Search</label>
+                    <input id="q" name="q" value="@ViewBag.Query" class="form-control" placeholder="Name, owner, team, description" />
+                </div>
+
+                <div class="filter-field">
+                    <label for="status" class="form-label">Status</label>
+                    <select id="status" name="status" class="form-select">
+                        <option value="">All statuses</option>
+                        @foreach (var status in Enum.GetValues<ProjectStatus>())
+                        {
+                            <option value="@status" selected="@(selectedStatus == status)">@status</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="filter-field">
+                    <label for="priority" class="form-label">Priority</label>
+                    <select id="priority" name="priority" class="form-select">
+                        <option value="">All priorities</option>
+                        @foreach (var priority in Enum.GetValues<ProjectPriority>())
+                        {
+                            <option value="@priority" selected="@(selectedPriority == priority)">@priority</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="filter-field">
+                    <label for="ownerId" class="form-label">Owner</label>
+                    <select id="ownerId" name="ownerId" class="form-select">
+                        <option value="">All owners</option>
+                        @foreach (var owner in ownerOptions)
+                        {
+                            <option value="@owner.Value" selected="@(selectedOwnerId == owner.Value)">@owner.Text</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="filter-field">
+                    <label for="teamId" class="form-label">Team</label>
+                    <select id="teamId" name="teamId" class="form-select">
+                        <option value="">All teams</option>
+                        @foreach (var team in teamOptions)
+                        {
+                            <option value="@team.Value" selected="@(selectedTeamId?.ToString() == team.Value)">@team.Text</option>
+                        }
+                    </select>
+                </div>
+
+                <label class="form-check align-self-center mt-4">
+                    <input class="form-check-input" type="checkbox" name="overdue" value="true" checked="@overdue" />
+                    <span class="form-check-label">Overdue</span>
+                </label>
+
+                <div class="filter-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-funnel"></i>
+                        Filter
+                    </button>
+                    <a asp-action="Index" class="btn btn-light">Reset</a>
+                </div>
+            </form>
+
+            <div class="dashboard-card-header">
+                <div>
+                    <h2>All Projects</h2>
+                    <p>@Model.Count project@(Model.Count == 1 ? "" : "s") available to your account.</p>
+                </div>
+            </div>
+
+            @if (Model.Count == 0)
+            {
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <i class="bi bi-folder2-open"></i>
+                    </div>
+                    <h3>No projects yet</h3>
+                    <p>Your accessible projects will appear here once they are created.</p>
+                    @if (canManageProjects)
+                    {
+                        <a asp-action="Create" class="btn btn-primary">Create Project</a>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table dashboard-table">
+                        <thead>
+                            <tr>
+                                <th>Project</th>
+                                <th>Owner</th>
+                                <th>Status</th>
+                                <th>Priority</th>
+                                <th>Team</th>
+                                <th>Deadline</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var project in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="project-info">
+                                            <div class="project-icon">
+                                                <i class="bi bi-kanban"></i>
+                                            </div>
+                                            <div>
+                                                <strong>@project.Name</strong>
+                                                <span>@(project.Description ?? "No description")</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>@project.Owner.FirstName @project.Owner.LastName</td>
+                                    <td><span class="badge badge-primary">@project.Status</span></td>
+                                    <td><span class="badge badge-warning">@project.Priority</span></td>
+                                    <td>@(project.Team?.Name ?? "Unassigned")</td>
+                                    <td>@(project.Deadline?.ToString("MMM d, yyyy") ?? "Not set")</td>
+                                    <td class="text-end">
+                                        <a asp-action="Dashboard" asp-route-id="@project.Id" class="btn btn-sm btn-light">
+                                            <i class="bi bi-speedometer2"></i>
+                                        </a>
+                                        <a asp-action="Details" asp-route-id="@project.Id" class="btn btn-sm btn-light">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </section>
+</div>

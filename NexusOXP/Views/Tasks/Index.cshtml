@@ -1,0 +1,214 @@
+@model IReadOnlyList<ProjectTask>
+@{
+    ViewData["Title"] = "Tasks";
+    var canManageTasks = ViewBag.CanManageTasks is true;
+    var projectId = ViewBag.ProjectId as int?;
+    var selectedStatus = ViewBag.Status as ProjectTaskStatus?;
+    var selectedPriority = ViewBag.Priority as ProjectPriority?;
+    var selectedAssignedUserId = ViewBag.AssignedUserId as string;
+    var selectedDue = ViewBag.Due as string;
+    var projectOptions = ViewBag.ProjectOptions as IReadOnlyList<SelectListItem> ?? [];
+    var userOptions = ViewBag.UserOptions as IReadOnlyList<SelectListItem> ?? [];
+}
+
+<div class="dashboard-page">
+    <section class="dashboard-header">
+        <div class="dashboard-header-content">
+            <div>
+                <span class="section-label">Tasks</span>
+                <h1>Task Workspace</h1>
+                <p>Track assigned work, due dates, priority, and current status.</p>
+            </div>
+
+            @if (canManageTasks)
+            {
+                <div class="dashboard-header-actions">
+                    <a asp-action="Board" asp-route-projectId="@projectId" class="btn btn-outline-primary">
+                        <i class="bi bi-kanban"></i>
+                        Board
+                    </a>
+
+                    <a asp-action="Create" asp-route-projectId="@projectId" class="btn btn-primary">
+                        <i class="bi bi-plus-lg"></i>
+                        New Task
+                    </a>
+                </div>
+            }
+        </div>
+    </section>
+
+    <section class="dashboard-stats">
+        <div class="row g-4">
+            <div class="col-lg-3 col-md-6">
+                <article class="dashboard-stat-card">
+                    <span class="stat-title">Total</span>
+                    <h2 class="stat-value">@Model.Count</h2>
+                </article>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <article class="dashboard-stat-card">
+                    <span class="stat-title">Todo</span>
+                    <h2 class="stat-value">@Model.Count(task => task.Status == ProjectTaskStatus.Todo)</h2>
+                </article>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <article class="dashboard-stat-card">
+                    <span class="stat-title">In Progress</span>
+                    <h2 class="stat-value">@Model.Count(task => task.Status == ProjectTaskStatus.InProgress)</h2>
+                </article>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <article class="dashboard-stat-card">
+                    <span class="stat-title">Completed</span>
+                    <h2 class="stat-value">@Model.Count(task => task.Status == ProjectTaskStatus.Completed)</h2>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <section class="dashboard-section">
+        <div class="dashboard-card">
+            <form asp-action="Index" method="get" class="filter-form mb-4">
+                <div class="filter-field filter-field-wide">
+                    <label for="q" class="form-label">Search</label>
+                    <input id="q" name="q" value="@ViewBag.Query" class="form-control" placeholder="Title, project, assignee, description" />
+                </div>
+
+                <div class="filter-field">
+                    <label for="projectId" class="form-label">Project</label>
+                    <select id="projectId" name="projectId" class="form-select">
+                        <option value="">All projects</option>
+                        @foreach (var project in projectOptions)
+                        {
+                            <option value="@project.Value" selected="@(projectId?.ToString() == project.Value)">@project.Text</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="filter-field">
+                    <label for="status" class="form-label">Status</label>
+                    <select id="status" name="status" class="form-select">
+                        <option value="">All statuses</option>
+                        @foreach (var status in Enum.GetValues<ProjectTaskStatus>())
+                        {
+                            <option value="@status" selected="@(selectedStatus == status)">@status</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="filter-field">
+                    <label for="priority" class="form-label">Priority</label>
+                    <select id="priority" name="priority" class="form-select">
+                        <option value="">All priorities</option>
+                        @foreach (var priority in Enum.GetValues<ProjectPriority>())
+                        {
+                            <option value="@priority" selected="@(selectedPriority == priority)">@priority</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="filter-field">
+                    <label for="assignedUserId" class="form-label">Assigned</label>
+                    <select id="assignedUserId" name="assignedUserId" class="form-select">
+                        <option value="">Anyone</option>
+                        <option value="unassigned" selected="@(selectedAssignedUserId == "unassigned")">Unassigned</option>
+                        @foreach (var user in userOptions)
+                        {
+                            <option value="@user.Value" selected="@(selectedAssignedUserId == user.Value)">@user.Text</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="filter-field">
+                    <label for="due" class="form-label">Due</label>
+                    <select id="due" name="due" class="form-select">
+                        <option value="">Any date</option>
+                        <option value="overdue" selected="@(selectedDue == "overdue")">Overdue</option>
+                        <option value="today" selected="@(selectedDue == "today")">Today</option>
+                        <option value="week" selected="@(selectedDue == "week")">Next 7 days</option>
+                        <option value="none" selected="@(selectedDue == "none")">No due date</option>
+                    </select>
+                </div>
+
+                <div class="filter-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-funnel"></i>
+                        Filter
+                    </button>
+                    <a asp-action="Index" class="btn btn-light">Reset</a>
+                </div>
+            </form>
+
+            <div class="dashboard-card-header">
+                <div>
+                    <h2>All Tasks</h2>
+                    <p>@Model.Count task@(Model.Count == 1 ? "" : "s") available to your account.</p>
+                </div>
+            </div>
+
+            @if (Model.Count == 0)
+            {
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <i class="bi bi-list-check"></i>
+                    </div>
+                    <h3>No tasks yet</h3>
+                    <p>Tasks will appear here once they are created.</p>
+                    @if (canManageTasks)
+                    {
+                        <div class="empty-state-actions">
+                            <a asp-action="Board" asp-route-projectId="@projectId" class="btn btn-outline-primary">Open Board</a>
+                            <a asp-action="Create" asp-route-projectId="@projectId" class="btn btn-primary">Create Task</a>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table dashboard-table">
+                        <thead>
+                            <tr>
+                                <th>Task</th>
+                                <th>Project</th>
+                                <th>Assigned</th>
+                                <th>Status</th>
+                                <th>Priority</th>
+                                <th>Due</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var task in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="project-info">
+                                            <div class="project-icon">
+                                                <i class="bi bi-check2-square"></i>
+                                            </div>
+                                            <div>
+                                                <strong>@task.Title</strong>
+                                                <span>@(task.Description ?? "No description")</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>@task.Project.Name</td>
+                                    <td>@(task.AssignedUser is null ? "Unassigned" : $"{task.AssignedUser.FirstName} {task.AssignedUser.LastName}")</td>
+                                    <td><span class="badge badge-primary">@task.Status</span></td>
+                                    <td><span class="badge badge-warning">@task.Priority</span></td>
+                                    <td>@(task.DueDate?.ToString("MMM d, yyyy") ?? "Not set")</td>
+                                    <td class="text-end">
+                                        <a asp-action="Details" asp-route-id="@task.Id" class="btn btn-sm btn-light">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </section>
+</div>

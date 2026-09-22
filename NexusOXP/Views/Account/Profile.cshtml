@@ -1,0 +1,336 @@
+@model AccountOverviewViewModel
+@{
+    ViewData["Title"] = "Profile";
+}
+
+<div class="dashboard-page">
+    <section class="dashboard-header">
+        <div class="dashboard-header-content">
+            <div>
+                <span class="section-label">Profile</span>
+                <h1>@(string.IsNullOrWhiteSpace(Model.FullName) ? Model.Email : Model.FullName)</h1>
+                <p>Review your account details, work, completed tasks, and recent activity.</p>
+            </div>
+
+            <div class="dashboard-header-actions">
+                <a asp-controller="Account" asp-action="Settings" class="btn btn-outline-primary">
+                    <i class="bi bi-gear"></i>
+                    Settings
+                </a>
+                <form asp-controller="Account" asp-action="SendTestEmail" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-envelope-check"></i>
+                        Send Test Email
+                    </button>
+                </form>
+                <a asp-controller="Dashboard" asp-action="Index" class="btn btn-primary">
+                    <i class="bi bi-speedometer2"></i>
+                    Dashboard
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <section class="dashboard-stats">
+        <div class="row g-4">
+            <div class="col-lg-3 col-md-6">
+                <article class="dashboard-stat-card">
+                    <span class="stat-title">Projects</span>
+                    <h2 class="stat-value">@Model.MyProjectsCount</h2>
+                </article>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <article class="dashboard-stat-card">
+                    <span class="stat-title">Open Tasks</span>
+                    <h2 class="stat-value">@Model.MyTasksCount</h2>
+                </article>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <article class="dashboard-stat-card">
+                    <span class="stat-title">Completed</span>
+                    <h2 class="stat-value">@Model.CompletedTasksCount</h2>
+                </article>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <article class="dashboard-stat-card">
+                    <span class="stat-title">Activity</span>
+                    <h2 class="stat-value">@Model.ActivityCount</h2>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <section class="dashboard-content">
+        <div class="row g-4">
+            <div class="col-xl-5">
+                <div class="dashboard-card">
+                    <div class="dashboard-card-header">
+                        <div>
+                            <h2>Account Details</h2>
+                            <p>Your visible account information.</p>
+                        </div>
+                    </div>
+
+                    <div class="profile-summary">
+                        <div class="profile-avatar">
+                            @if (string.IsNullOrWhiteSpace(Model.ProfileImage))
+                            {
+                                <i class="bi bi-person"></i>
+                            }
+                            else
+                            {
+                                <img src="@Model.ProfileImage" alt="@Model.FullName" />
+                            }
+                        </div>
+
+                        <dl class="project-detail-list">
+                            <dt>Email</dt>
+                            <dd>@Model.Email</dd>
+
+                            <dt>Phone</dt>
+                            <dd>@Model.PhoneNumber</dd>
+
+                            <dt>Status</dt>
+                            <dd>
+                                <span class="badge @(Model.IsActive ? "badge-success" : "badge-danger")">
+                                    @(Model.IsActive ? "Active" : "Inactive")
+                                </span>
+                            </dd>
+
+                            <dt>Joined</dt>
+                            <dd>@Model.CreatedAt.ToLocalTime().ToString("MMM d, yyyy")</dd>
+
+                            <dt>Roles</dt>
+                            <dd>@(Model.Roles.Count == 0 ? "No roles assigned" : string.Join(", ", Model.Roles))</dd>
+                        </dl>
+                    </div>
+                </div>
+
+                <div class="dashboard-card mt-4">
+                    <div class="dashboard-card-header">
+                        <div>
+                            <h2>Edit Profile</h2>
+                            <p>Update your name, email, phone, or profile picture URL.</p>
+                        </div>
+                    </div>
+
+                    <form asp-action="UpdateProfile" method="post" class="stacked-form">
+                        @Html.AntiForgeryToken()
+                        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                        <div>
+                            <label asp-for="Profile.FirstName" class="form-label"></label>
+                            <input asp-for="Profile.FirstName" class="form-control" />
+                            <span asp-validation-for="Profile.FirstName" class="text-danger"></span>
+                        </div>
+
+                        <div>
+                            <label asp-for="Profile.LastName" class="form-label"></label>
+                            <input asp-for="Profile.LastName" class="form-control" />
+                            <span asp-validation-for="Profile.LastName" class="text-danger"></span>
+                        </div>
+
+                        <div>
+                            <label asp-for="Profile.Email" class="form-label"></label>
+                            <input asp-for="Profile.Email" class="form-control" />
+                            <span asp-validation-for="Profile.Email" class="text-danger"></span>
+                        </div>
+
+                        <div>
+                            <label asp-for="Profile.PhoneNumber" class="form-label"></label>
+                            <input asp-for="Profile.PhoneNumber" class="form-control" />
+                            <span asp-validation-for="Profile.PhoneNumber" class="text-danger"></span>
+                        </div>
+
+                        <div>
+                            <label asp-for="Profile.ProfileImage" class="form-label"></label>
+                            <input asp-for="Profile.ProfileImage" class="form-control" />
+                            <span asp-validation-for="Profile.ProfileImage" class="text-danger"></span>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Save Profile</button>
+                    </form>
+                </div>
+
+                <div class="dashboard-card mt-4">
+                    <div class="dashboard-card-header">
+                        <div>
+                            <h2>Password</h2>
+                            <p>Change your password while signed in.</p>
+                        </div>
+                    </div>
+
+                    <form asp-action="ChangePassword" method="post" class="stacked-form">
+                        @Html.AntiForgeryToken()
+
+                        <div>
+                            <label asp-for="Password.CurrentPassword" class="form-label"></label>
+                            <input asp-for="Password.CurrentPassword" class="form-control" />
+                            <span asp-validation-for="Password.CurrentPassword" class="text-danger"></span>
+                        </div>
+
+                        <div>
+                            <label asp-for="Password.NewPassword" class="form-label"></label>
+                            <input asp-for="Password.NewPassword" class="form-control" />
+                            <span asp-validation-for="Password.NewPassword" class="text-danger"></span>
+                        </div>
+
+                        <div>
+                            <label asp-for="Password.ConfirmPassword" class="form-label"></label>
+                            <input asp-for="Password.ConfirmPassword" class="form-control" />
+                            <span asp-validation-for="Password.ConfirmPassword" class="text-danger"></span>
+                        </div>
+
+                        <button type="submit" class="btn btn-outline-primary">Change Password</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="col-xl-7">
+                <div class="dashboard-card">
+                    <div class="dashboard-card-header">
+                        <div>
+                            <h2>My Projects</h2>
+                            <p>Recent projects connected to your account.</p>
+                        </div>
+                        <a asp-controller="Projects" asp-action="Index" class="dashboard-card-link">View All</a>
+                    </div>
+
+                    @if (Model.MyProjects.Count == 0)
+                    {
+                        <div class="empty-state">
+                            <div class="empty-state-icon"><i class="bi bi-folder2-open"></i></div>
+                            <h3>No projects</h3>
+                            <p>Your projects will appear here.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="activity-list">
+                            @foreach (var project in Model.MyProjects)
+                            {
+                                <a asp-controller="Projects" asp-action="Dashboard" asp-route-id="@project.Id" class="quick-action">
+                                    <div class="quick-action-icon"><i class="bi bi-kanban"></i></div>
+                                    <div>
+                                        <strong>@project.Name</strong>
+                                        <span>@project.Status · @project.Priority · @(project.Team?.Name ?? "No team")</span>
+                                    </div>
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+                            }
+                        </div>
+                    }
+                </div>
+
+                <div class="dashboard-card mt-4">
+                    <div class="dashboard-card-header">
+                        <div>
+                            <h2>My Tasks</h2>
+                            <p>Open tasks assigned to or created by you.</p>
+                        </div>
+                        <a asp-controller="Tasks" asp-action="Index" class="dashboard-card-link">View All</a>
+                    </div>
+
+                    @if (Model.MyTasks.Count == 0)
+                    {
+                        <div class="empty-state">
+                            <div class="empty-state-icon"><i class="bi bi-list-task"></i></div>
+                            <h3>No open tasks</h3>
+                            <p>Open work will appear here.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="activity-list">
+                            @foreach (var task in Model.MyTasks)
+                            {
+                                <a asp-controller="Tasks" asp-action="Details" asp-route-id="@task.Id" class="quick-action">
+                                    <div class="quick-action-icon"><i class="bi bi-check2-square"></i></div>
+                                    <div>
+                                        <strong>@task.Title</strong>
+                                        <span>@task.Project.Name · @task.Status · due @(task.DueDate?.ToString("MMM d, yyyy") ?? "not set")</span>
+                                    </div>
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+                            }
+                        </div>
+                    }
+                </div>
+
+                <div class="dashboard-card mt-4">
+                    <div class="dashboard-card-header">
+                        <div>
+                            <h2>Completed Tasks</h2>
+                            <p>Recently completed work.</p>
+                        </div>
+                    </div>
+
+                    @if (Model.CompletedTasks.Count == 0)
+                    {
+                        <div class="empty-state">
+                            <div class="empty-state-icon"><i class="bi bi-check-circle"></i></div>
+                            <h3>No completed tasks</h3>
+                            <p>Finished work will appear here.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="activity-list">
+                            @foreach (var task in Model.CompletedTasks)
+                            {
+                                <a asp-controller="Tasks" asp-action="Details" asp-route-id="@task.Id" class="quick-action">
+                                    <div class="quick-action-icon"><i class="bi bi-check-circle"></i></div>
+                                    <div>
+                                        <strong>@task.Title</strong>
+                                        <span>@task.Project.Name · completed @task.UpdatedAt.ToLocalTime().ToString("MMM d, yyyy")</span>
+                                    </div>
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+                            }
+                        </div>
+                    }
+                </div>
+
+                <div class="dashboard-card mt-4">
+                    <div class="dashboard-card-header">
+                        <div>
+                            <h2>Recent Activity</h2>
+                            <p>Latest activity created by your account.</p>
+                        </div>
+                        <a asp-controller="ActivityLogs" asp-action="Index" class="dashboard-card-link">View All</a>
+                    </div>
+
+                    @if (Model.RecentActivity.Count == 0)
+                    {
+                        <div class="empty-state">
+                            <div class="empty-state-icon"><i class="bi bi-activity"></i></div>
+                            <h3>No activity</h3>
+                            <p>Recent account activity will appear here.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="activity-list">
+                            @foreach (var activity in Model.RecentActivity)
+                            {
+                                <div class="activity-item">
+                                    <div class="activity-icon"><i class="bi bi-activity"></i></div>
+                                    <div class="activity-content">
+                                        <strong>@activity.Description</strong>
+                                        <p>@activity.EntityType · @activity.Action</p>
+                                        <span>@activity.CreatedAt.ToLocalTime().ToString("MMM d, yyyy h:mm tt")</span>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,364 @@
+@model DashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+    var canManageProjects = User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Manager);
+    var completedPercent = Model.TotalTasks == 0
+        ? 0
+        : (int)Math.Round(Model.CompletedTasks * 100.0 / Model.TotalTasks);
+}
+
+<div class="dashboard-page">
+    <section class="dashboard-header">
+        <div class="dashboard-header-content">
+            <div>
+                <span class="section-label">Dashboard</span>
+                <h1>Welcome back</h1>
+                <p>Live overview of your active projects, tasks, deadlines, and activity.</p>
+            </div>
+
+            <div class="dashboard-header-actions">
+                <a asp-controller="Search" asp-action="Index" class="btn btn-outline-primary">
+                    <i class="bi bi-search"></i>
+                    Search
+                </a>
+                <a asp-controller="Tasks" asp-action="Board" class="btn btn-outline-primary">
+                    <i class="bi bi-kanban"></i>
+                    Board
+                </a>
+                @if (canManageProjects)
+                {
+                    <a asp-controller="Projects" asp-action="Create" class="btn btn-primary">
+                        <i class="bi bi-plus-lg"></i>
+                        New Project
+                    </a>
+                }
+            </div>
+        </div>
+    </section>
+
+    <section class="dashboard-stats">
+        <div class="row g-4">
+            <div class="col-xl-3 col-md-6">
+                <article class="dashboard-stat-card">
+                    <div class="stat-card-top">
+                        <div>
+                            <span class="stat-title">Projects</span>
+                            <h2 class="stat-value">@Model.TotalProjects</h2>
+                        </div>
+                        <div class="stat-icon"><i class="bi bi-folder2-open"></i></div>
+                    </div>
+                    <div class="stat-footer">
+                        <span class="stat-positive">@Model.ActiveProjects active</span>
+                        <span>@Model.TeamsCount teams</span>
+                    </div>
+                </article>
+            </div>
+
+            <div class="col-xl-3 col-md-6">
+                <article class="dashboard-stat-card">
+                    <div class="stat-card-top">
+                        <div>
+                            <span class="stat-title">Active Tasks</span>
+                            <h2 class="stat-value">@Model.ActiveTasks</h2>
+                        </div>
+                        <div class="stat-icon"><i class="bi bi-list-task"></i></div>
+                    </div>
+                    <div class="stat-footer">
+                        <span>@Model.TotalTasks total</span>
+                    </div>
+                </article>
+            </div>
+
+            <div class="col-xl-3 col-md-6">
+                <article class="dashboard-stat-card">
+                    <div class="stat-card-top">
+                        <div>
+                            <span class="stat-title">Completed</span>
+                            <h2 class="stat-value">@Model.CompletedTasks</h2>
+                        </div>
+                        <div class="stat-icon"><i class="bi bi-check-circle"></i></div>
+                    </div>
+                    <div class="stat-footer">
+                        <span class="stat-positive">@completedPercent% complete</span>
+                    </div>
+                </article>
+            </div>
+
+            <div class="col-xl-3 col-md-6">
+                <article class="dashboard-stat-card @(Model.OverdueTasks > 0 ? "stat-card-danger" : "")">
+                    <div class="stat-card-top">
+                        <div>
+                            <span class="stat-title">Overdue</span>
+                            <h2 class="stat-value">@Model.OverdueTasks</h2>
+                        </div>
+                        <div class="stat-icon"><i class="bi bi-exclamation-triangle"></i></div>
+                    </div>
+                    <div class="stat-footer">
+                        <span>@Model.UnreadNotifications unread notifications</span>
+                    </div>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <section class="dashboard-content">
+        <div class="row g-4">
+            <div class="col-xl-8">
+                <div class="dashboard-card">
+                    <div class="dashboard-card-header">
+                        <div>
+                            <h2>My Tasks</h2>
+                            <p>Open work assigned to or created by you.</p>
+                        </div>
+                        <a asp-controller="Tasks" asp-action="Index" class="dashboard-card-link">View All</a>
+                    </div>
+
+                    @if (Model.MyTasks.Count == 0)
+                    {
+                        <div class="empty-state">
+                            <div class="empty-state-icon"><i class="bi bi-list-check"></i></div>
+                            <h3>No open tasks</h3>
+                            <p>Your active task list is clear.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="dashboard-task-list">
+                            @foreach (var task in Model.MyTasks)
+                            {
+                                <a asp-controller="Tasks" asp-action="Details" asp-route-id="@task.Id" class="dashboard-task-item @(task.IsOverdue ? "is-overdue" : "")">
+                                    <div>
+                                        <strong>@task.Title</strong>
+                                        <span>@task.ProjectName - @task.AssignedName</span>
+                                    </div>
+                                    <span class="badge badge-primary">@task.Status</span>
+                                    <span class="badge badge-warning">@task.Priority</span>
+                                    <span>@(task.DueDate?.ToString("MMM d, yyyy") ?? "No due date")</span>
+                                </a>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="col-xl-4">
+                <div class="dashboard-card">
+                    <div class="dashboard-card-header">
+                        <div>
+                            <h2>Quick Actions</h2>
+                            <p>Fast paths into daily work.</p>
+                        </div>
+                    </div>
+
+                    <div class="quick-actions">
+                        @if (canManageProjects)
+                        {
+                            <a asp-controller="Projects" asp-action="Create" class="quick-action">
+                                <div class="quick-action-icon"><i class="bi bi-plus-lg"></i></div>
+                                <div>
+                                    <strong>Create Project</strong>
+                                    <span>Start a new workspace</span>
+                                </div>
+                                <i class="bi bi-chevron-right"></i>
+                            </a>
+
+                            <a asp-controller="Tasks" asp-action="Create" class="quick-action">
+                                <div class="quick-action-icon"><i class="bi bi-list-check"></i></div>
+                                <div>
+                                    <strong>Create Task</strong>
+                                    <span>Add work to a project</span>
+                                </div>
+                                <i class="bi bi-chevron-right"></i>
+                            </a>
+                        }
+
+                        <a asp-controller="Projects" asp-action="Index" class="quick-action">
+                            <div class="quick-action-icon"><i class="bi bi-folder2-open"></i></div>
+                            <div>
+                                <strong>Projects</strong>
+                                <span>Review status and priority</span>
+                            </div>
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+
+                        <a asp-controller="Notifications" asp-action="Index" class="quick-action">
+                            <div class="quick-action-icon"><i class="bi bi-bell"></i></div>
+                            <div>
+                                <strong>Notifications</strong>
+                                <span>@Model.UnreadNotifications unread updates</span>
+                            </div>
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+
+                        <a asp-controller="Account" asp-action="Profile" class="quick-action">
+                            <div class="quick-action-icon"><i class="bi bi-person"></i></div>
+                            <div>
+                                <strong>Profile</strong>
+                                <span>Account and personal work</span>
+                            </div>
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="dashboard-content">
+        <div class="row g-4">
+            <div class="col-xl-6">
+                <div class="dashboard-card">
+                    <div class="dashboard-card-header">
+                        <div>
+                            <h2>Upcoming Deadlines</h2>
+                            <p>Nearest incomplete tasks with due dates.</p>
+                        </div>
+                        <a asp-controller="Tasks" asp-action="Index" asp-route-due="week" class="dashboard-card-link">Next 7 Days</a>
+                    </div>
+
+                    @if (Model.UpcomingDeadlines.Count == 0)
+                    {
+                        <div class="empty-state">
+                            <div class="empty-state-icon"><i class="bi bi-calendar-check"></i></div>
+                            <h3>No upcoming deadlines</h3>
+                            <p>Deadlines will appear here when tasks are scheduled.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="activity-list">
+                            @foreach (var task in Model.UpcomingDeadlines)
+                            {
+                                <a asp-controller="Tasks" asp-action="Details" asp-route-id="@task.Id" class="quick-action">
+                                    <div class="quick-action-icon"><i class="bi bi-calendar-event"></i></div>
+                                    <div>
+                                        <strong>@task.Title</strong>
+                                        <span>@task.ProjectName - @task.Priority - due @task.DueDate?.ToString("MMM d, yyyy")</span>
+                                    </div>
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="col-xl-6">
+                <div class="dashboard-card">
+                    <div class="dashboard-card-header">
+                        <div>
+                            <h2>Recent Activity</h2>
+                            <p>Latest project, task, team, comment, and notification events.</p>
+                        </div>
+                        <a asp-controller="ActivityLogs" asp-action="Index" class="dashboard-card-link">View Logs</a>
+                    </div>
+
+                    @if (Model.RecentActivity.Count == 0)
+                    {
+                        <div class="empty-state">
+                            <div class="empty-state-icon"><i class="bi bi-activity"></i></div>
+                            <h3>No activity yet</h3>
+                            <p>Updates will appear here as the workspace changes.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="activity-list">
+                            @foreach (var activity in Model.RecentActivity)
+                            {
+                                <div class="activity-item">
+                                    <div class="activity-icon"><i class="bi @activity.Icon"></i></div>
+                                    <div class="activity-content">
+                                        <strong>@activity.Title</strong>
+                                        <p>@activity.Description</p>
+                                        <span>@activity.OccurredAt.ToLocalTime().ToString("MMM d, yyyy h:mm tt")</span>
+                                    </div>
+                                    @if (!string.IsNullOrWhiteSpace(activity.LinkUrl))
+                                    {
+                                        <a href="@activity.LinkUrl" class="btn btn-sm btn-light" aria-label="Open activity">
+                                            <i class="bi bi-arrow-right"></i>
+                                        </a>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="dashboard-section">
+        <div class="dashboard-card">
+            <div class="dashboard-card-header">
+                <div>
+                    <h2>Recent Projects</h2>
+                    <p>Current project progress, priority, and last update.</p>
+                </div>
+                <a asp-controller="Projects" asp-action="Index" class="dashboard-card-link">View All</a>
+            </div>
+
+            @if (Model.RecentProjects.Count == 0)
+            {
+                <div class="empty-state">
+                    <div class="empty-state-icon"><i class="bi bi-folder2-open"></i></div>
+                    <h3>No projects yet</h3>
+                    <p>Create or join a project to see it here.</p>
+                    @if (canManageProjects)
+                    {
+                        <a asp-controller="Projects" asp-action="Create" class="btn btn-primary">Create Project</a>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table dashboard-table">
+                        <thead>
+                            <tr>
+                                <th>Project</th>
+                                <th>Status</th>
+                                <th>Priority</th>
+                                <th>Progress</th>
+                                <th>Updated</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var project in Model.RecentProjects)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="project-info">
+                                            <div class="project-icon"><i class="bi bi-kanban"></i></div>
+                                            <div>
+                                                <strong>@project.Name</strong>
+                                                <span>@project.Description</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge badge-primary">@project.Status</span></td>
+                                    <td><span class="badge badge-warning">@project.Priority</span></td>
+                                    <td>
+                                        <div class="progress-wrapper">
+                                            <div class="progress">
+                                                <div class="progress-bar" role="progressbar" style="width: @project.ProgressPercent%"></div>
+                                            </div>
+                                            <span>@project.ProgressPercent%</span>
+                                        </div>
+                                    </td>
+                                    <td>@project.UpdatedAt.ToLocalTime().ToString("MMM d, yyyy")</td>
+                                    <td class="text-end">
+                                        <a asp-controller="Projects" asp-action="Dashboard" asp-route-id="@project.Id" class="btn btn-sm btn-light" aria-label="Open project dashboard">
+                                            <i class="bi bi-speedometer2"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </section>
+</div>

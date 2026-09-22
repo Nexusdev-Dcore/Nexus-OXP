@@ -1,0 +1,97 @@
+using System;
+using System.Linq;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.DependencyInjection;
+using NexusOXP.Authorization;
+using NexusOXP.Models;
+
+namespace NexusOXP.Data
+{
+    public static class IdentitySeedData
+    {
+        private const string DefaultAdminEmail = "admin@gmail.com";
+        private const string DefaultAdminPassword = "AdminDoki1234!@#$";
+
+        public static async Task SeedRolesAsync(IServiceProvider serviceProvider)
+        {
+            using var scope = serviceProvider.CreateScope();
+            var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+
+            foreach (var roleName in AppRoles.All)
+            {
+                if (!await roleManager.RoleExistsAsync(roleName))
+                {
+                    await roleManager.CreateAsync(new IdentityRole(roleName));
+                }
+            }
+
+            var adminEmail = GetConfiguredValue("NEXUSOXP_ADMIN_EMAIL", DefaultAdminEmail);
+            var adminPassword = GetConfiguredPassword();
+
+            var adminUser = await userManager.FindByEmailAsync(adminEmail);
+            if (adminUser is null)
+            {
+                adminUser = new ApplicationUser
+                {
+                    UserName = adminEmail,
+                    Email = adminEmail,
+                    EmailConfirmed = true,
+                    FirstName = "Super",
+                    LastName = "Admin",
+                    IsActive = true
+                };
+
+                var createResult = await userManager.CreateAsync(adminUser, adminPassword);
+                if (!createResult.Succeeded)
+                {
+                    throw new InvalidOperationException(
+                        $"Failed to create admin user: {string.Join(", ", createResult.Errors.Select(error => error.Description))}");
+                }
+            }
+            else
+            {
+                adminUser.UserName = adminEmail;
+                adminUser.Email = adminEmail;
+                adminUser.EmailConfirmed = true;
+                adminUser.FirstName = string.IsNullOrWhiteSpace(adminUser.FirstName) ? "Super" : adminUser.FirstName;
+                adminUser.LastName = string.IsNullOrWhiteSpace(adminUser.LastName) ? "Admin" : adminUser.LastName;
+                adminUser.IsActive = true;
+
+                await userManager.UpdateAsync(adminUser);
+            }
+
+            if (!await userManager.IsInRoleAsync(adminUser, AppRoles.Admin))
+            {
+                await userManager.AddToRoleAsync(adminUser, AppRoles.Admin);
+            }
+        }
+
+        private static string GetConfiguredValue(string key, string fallback)
+        {
+            var value = Environment.GetEnvironmentVariable(key);
+            return !string.IsNullOrWhiteSpace(value)
+                ? value
+                : fallback;
+        }
+
+        private static string GetConfiguredPassword()
+        {
+            var configuredPassword = Environment.GetEnvironmentVariable("NEXUSOXP_ADMIN_PASSWORD");
+            var environmentName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+
+            if (!string.IsNullOrWhiteSpace(configuredPassword))
+            {
+                return configuredPassword;
+            }
+
+            if (string.Equals(environmentName, "Production", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    "NEXUSOXP_ADMIN_PASSWORD must be set in Production. Do not rely on the local fallback password in a production environment.");
+            }
+
+            return DefaultAdminPassword;
+        }
+    }
+}

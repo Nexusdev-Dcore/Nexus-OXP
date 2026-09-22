@@ -1,0 +1,52 @@
+@{
+    ViewData["Title"] = "Access Denied";
+}
+
+<div class="auth-page">
+
+    <div class="auth-container">
+
+        <div class="auth-card">
+
+            <div class="auth-header">
+
+                <a asp-controller="Home"
+                   asp-action="Index"
+                   class="auth-logo">
+                    YourPlatform
+                </a>
+
+                <div class="auth-icon-large auth-icon-danger">
+                    <i class="bi bi-shield-x"></i>
+                </div>
+
+                <h1>Access denied</h1>
+
+                <p>
+                    You don't have permission to access this page.
+                </p>
+
+            </div>
+
+
+            <div class="access-denied-actions">
+
+                <a asp-controller="Dashboard"
+                   asp-action="Index"
+                   class="btn btn-primary">
+                    Go to Dashboard
+                </a>
+
+                <a asp-controller="Home"
+                   asp-action="Index"
+                   class="btn btn-outline-primary">
+                    Back to Home
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>

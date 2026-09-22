@@ -1,0 +1,121 @@
+@model IReadOnlyList<Notification>
+@{
+    ViewData["Title"] = "Notifications";
+    var unreadCount = Model.Count(notification => !notification.IsRead);
+}
+
+<div class="dashboard-page">
+    <section class="dashboard-header">
+        <div class="dashboard-header-content">
+            <div>
+                <span class="section-label">Notifications</span>
+                <h1>Notification Center</h1>
+                <p>Track task assignments, comments, deadlines, and completed work.</p>
+            </div>
+
+            @if (unreadCount > 0)
+            {
+                <form asp-action="MarkAllRead" method="post" class="m-0">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check2-all"></i>
+                        Mark All Read
+                    </button>
+                </form>
+            }
+        </div>
+    </section>
+
+    <section class="dashboard-stats">
+        <div class="row g-4">
+            <div class="col-lg-6 col-md-6">
+                <article class="dashboard-stat-card">
+                    <span class="stat-title">Unread</span>
+                    <h2 class="stat-value">@unreadCount</h2>
+                </article>
+            </div>
+            <div class="col-lg-6 col-md-6">
+                <article class="dashboard-stat-card">
+                    <span class="stat-title">Total</span>
+                    <h2 class="stat-value">@Model.Count</h2>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <section class="dashboard-section">
+        <div class="dashboard-card">
+            <div class="dashboard-card-header">
+                <div>
+                    <h2>Recent Notifications</h2>
+                    <p>Newest items are shown first.</p>
+                </div>
+            </div>
+
+            @if (Model.Count == 0)
+            {
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <i class="bi bi-bell"></i>
+                    </div>
+                    <h3>No notifications</h3>
+                    <p>New task updates will appear here.</p>
+                </div>
+            }
+            else
+            {
+                <div class="activity-list notification-list">
+                    @foreach (var notification in Model)
+                    {
+                        <article class="activity-item notification-item @(notification.IsRead ? "is-read" : "is-unread")">
+                            <div class="activity-icon">
+                                <i class="@NotificationIcon(notification.Type)"></i>
+                            </div>
+                            <div class="activity-content">
+                                <strong>@notification.Title</strong>
+                                <p>@notification.Message</p>
+                                <span>@notification.CreatedAt.ToLocalTime().ToString("MMM d, yyyy h:mm tt")</span>
+                            </div>
+
+                            <div class="notification-actions">
+                                @if (!string.IsNullOrWhiteSpace(notification.LinkUrl))
+                                {
+                                    <form asp-action="Open" asp-route-id="@notification.Id" method="post" class="m-0">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-sm btn-light" aria-label="Open notification">
+                                            <i class="bi bi-box-arrow-up-right"></i>
+                                        </button>
+                                    </form>
+                                }
+
+                                @if (!notification.IsRead)
+                                {
+                                    <form asp-action="MarkRead" asp-route-id="@notification.Id" method="post" class="m-0">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-sm btn-primary" aria-label="Mark notification read">
+                                            <i class="bi bi-check2"></i>
+                                        </button>
+                                    </form>
+                                }
+                            </div>
+                        </article>
+                    }
+                </div>
+            }
+        </div>
+    </section>
+</div>
+
+@functions {
+    private static string NotificationIcon(NotificationType type)
+    {
+        return type switch
+        {
+            NotificationType.TaskAssigned => "bi bi-person-check",
+            NotificationType.TaskComment => "bi bi-chat-left-text",
+            NotificationType.Deadline => "bi bi-calendar-event",
+            NotificationType.TaskCompleted => "bi bi-check2-circle",
+            _ => "bi bi-bell"
+        };
+    }
+}

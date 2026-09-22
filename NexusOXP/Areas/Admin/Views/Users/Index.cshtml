@@ -1,0 +1,70 @@
+@model IReadOnlyList<ApplicationUser>
+@{
+    ViewData["Title"] = "Admin Users";
+}
+
+<div class="dashboard-page">
+    <section class="dashboard-header">
+        <div class="dashboard-header-content">
+            <div>
+                <span class="section-label">Admin</span>
+                <h1>Users</h1>
+                <p>Review and activate or deactivate user accounts.</p>
+            </div>
+            <div class="dashboard-header-actions">
+                <a asp-area="Admin" asp-controller="Dashboard" asp-action="Index" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-left"></i>
+                    Admin
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <section class="dashboard-section">
+        <div class="dashboard-card">
+            <form method="get" class="filter-form mb-4">
+                <div class="filter-field-wide">
+                    <label for="q" class="form-label">Search</label>
+                    <input id="q" name="q" value="@ViewBag.Query" class="form-control" placeholder="Name or email" />
+                </div>
+                <div class="filter-actions">
+                    <button type="submit" class="btn btn-primary">Filter</button>
+                    <a asp-action="Index" class="btn btn-outline-primary">Clear</a>
+                </div>
+            </form>
+
+            <div class="table-responsive">
+                <table class="table dashboard-table align-middle">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Created</th>
+                            <th>Status</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var user in Model)
+                        {
+                            <tr>
+                                <td>@user.FirstName @user.LastName</td>
+                                <td>@user.Email</td>
+                                <td>@user.CreatedAt.ToLocalTime().ToString("MMM d, yyyy")</td>
+                                <td>@(user.IsActive ? "Active" : "Inactive")</td>
+                                <td class="text-end">
+                                    <form asp-action="ToggleActive" asp-route-id="@user.Id" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-sm btn-outline-primary">
+                                            @(user.IsActive ? "Deactivate" : "Activate")
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+</div>

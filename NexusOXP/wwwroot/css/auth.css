@@ -1,0 +1,137 @@
+.auth-page {
+    min-height: 72vh;
+    display: grid;
+    place-items: center;
+    padding: 4rem 1rem;
+    background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+}
+
+.auth-container {
+    width: min(100%, 480px);
+}
+
+.auth-card {
+    padding: 2rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    box-shadow: var(--shadow-lg);
+}
+
+.auth-card-register {
+    width: min(100vw - 2rem, 640px);
+    margin-left: 50%;
+    transform: translateX(-50%);
+}
+
+.auth-header {
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.auth-logo {
+    display: inline-block;
+    margin-bottom: 1rem;
+    color: var(--primary);
+    font-weight: 800;
+}
+
+.auth-icon-large {
+    display: inline-flex;
+    width: 58px;
+    height: 58px;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+    border-radius: 50%;
+    background: #dbeafe;
+    color: var(--primary);
+    font-size: 1.5rem;
+}
+
+.auth-icon-danger {
+    background: #fee2e2;
+    color: var(--danger);
+}
+
+.auth-header h1 {
+    margin-bottom: 0.4rem;
+}
+
+.auth-header p,
+.auth-footer p {
+    margin: 0;
+    color: var(--text-muted);
+}
+
+.auth-form,
+.form-group {
+    display: grid;
+    gap: 1rem;
+}
+
+.form-label-row,
+.auth-options {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.remember-me,
+.terms-checkbox {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    color: var(--text-muted);
+    font-size: 0.92rem;
+}
+
+.auth-submit {
+    width: 100%;
+    margin-top: 0.25rem;
+}
+
+.auth-divider {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 1.5rem 0;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+}
+
+.auth-footer {
+    text-align: center;
+}
+
+.auth-link,
+.auth-back-link {
+    font-weight: 700;
+}
+
+.auth-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.password-hint {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+.access-denied-actions {
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+}

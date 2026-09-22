@@ -1,0 +1,146 @@
+@model IReadOnlyList<Team>
+@{
+    ViewData["Title"] = "Teams";
+    var canManageTeams = ViewBag.CanManageTeams is true;
+    var selectedManagerId = ViewBag.ManagerId as string;
+    var managerOptions = ViewBag.ManagerOptions as IReadOnlyList<SelectListItem> ?? [];
+}
+
+<div class="dashboard-page">
+    <section class="dashboard-header">
+        <div class="dashboard-header-content">
+            <div>
+                <span class="section-label">Teams</span>
+                <h1>Team Workspace</h1>
+                <p>Manage team ownership, membership, and project assignments.</p>
+            </div>
+
+            @if (canManageTeams)
+            {
+                <div class="dashboard-header-actions">
+                    <a asp-action="Create" class="btn btn-primary">
+                        <i class="bi bi-plus-lg"></i>
+                        New Team
+                    </a>
+                </div>
+            }
+        </div>
+    </section>
+
+    <section class="dashboard-stats">
+        <div class="row g-4">
+            <div class="col-lg-4 col-md-6">
+                <article class="dashboard-stat-card">
+                    <span class="stat-title">Teams</span>
+                    <h2 class="stat-value">@Model.Count</h2>
+                </article>
+            </div>
+            <div class="col-lg-4 col-md-6">
+                <article class="dashboard-stat-card">
+                    <span class="stat-title">Members</span>
+                    <h2 class="stat-value">@Model.Sum(team => team.Members.Count)</h2>
+                </article>
+            </div>
+            <div class="col-lg-4 col-md-6">
+                <article class="dashboard-stat-card">
+                    <span class="stat-title">Assigned Projects</span>
+                    <h2 class="stat-value">@Model.Sum(team => team.Projects.Count)</h2>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <section class="dashboard-section">
+        <div class="dashboard-card">
+            <form asp-action="Index" method="get" class="filter-form mb-4">
+                <div class="filter-field filter-field-wide">
+                    <label for="q" class="form-label">Search</label>
+                    <input id="q" name="q" value="@ViewBag.Query" class="form-control" placeholder="Team, manager, description" />
+                </div>
+
+                <div class="filter-field">
+                    <label for="managerId" class="form-label">Manager</label>
+                    <select id="managerId" name="managerId" class="form-select">
+                        <option value="">All managers</option>
+                        @foreach (var manager in managerOptions)
+                        {
+                            <option value="@manager.Value" selected="@(selectedManagerId == manager.Value)">@manager.Text</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="filter-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-funnel"></i>
+                        Filter
+                    </button>
+                    <a asp-action="Index" class="btn btn-light">Reset</a>
+                </div>
+            </form>
+
+            <div class="dashboard-card-header">
+                <div>
+                    <h2>All Teams</h2>
+                    <p>@Model.Count team@(Model.Count == 1 ? "" : "s") available to your account.</p>
+                </div>
+            </div>
+
+            @if (Model.Count == 0)
+            {
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <i class="bi bi-people"></i>
+                    </div>
+                    <h3>No teams yet</h3>
+                    <p>Teams will appear here once they are created.</p>
+                    @if (canManageTeams)
+                    {
+                        <a asp-action="Create" class="btn btn-primary">Create Team</a>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table dashboard-table">
+                        <thead>
+                            <tr>
+                                <th>Team</th>
+                                <th>Manager</th>
+                                <th>Members</th>
+                                <th>Projects</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var team in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="project-info">
+                                            <div class="project-icon">
+                                                <i class="bi bi-people"></i>
+                                            </div>
+                                            <div>
+                                                <strong>@team.Name</strong>
+                                                <span>@(team.Description ?? "No description")</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>@team.Manager.FirstName @team.Manager.LastName</td>
+                                    <td>@team.Members.Count</td>
+                                    <td>@team.Projects.Count</td>
+                                    <td class="text-end">
+                                        <a asp-action="Details" asp-route-id="@team.Id" class="btn btn-sm btn-light">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </section>
+</div>

@@ -1,0 +1,186 @@
+@{
+    ViewData["Title"] = "Home";
+}
+
+<section class="hero">
+    <div class="container">
+        <div class="hero-content">
+            <span class="hero-badge">Welcome to YourPlatform</span>
+
+            <h1>
+                Build, manage and grow
+                <span>with confidence.</span>
+            </h1>
+
+            <p class="hero-description">
+                A modern platform designed to help you manage your work,
+                stay organized and achieve more from one simple place.
+            </p>
+
+            <div class="hero-actions">
+                <a asp-controller="Account"
+                   asp-action="Register"
+                   class="btn btn-primary">
+                    Get Started
+                </a>
+
+                <a asp-controller="Home"
+                   asp-action="About"
+                   class="btn btn-outline-primary">
+                    Learn More
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<section class="features">
+    <div class="container">
+
+        <div class="section-header">
+            <span class="section-label">Features</span>
+            <h2>Everything you need in one place</h2>
+            <p>
+                Powerful tools with a simple and intuitive experience.
+            </p>
+        </div>
+
+        <div class="row g-4">
+
+            <div class="col-md-4">
+                <article class="feature-card">
+                    <div class="feature-icon">
+                        <i class="bi bi-speedometer2"></i>
+                    </div>
+
+                    <h3>Simple Dashboard</h3>
+
+                    <p>
+                        Get a clear overview of your activity,
+                        data and important information.
+                    </p>
+                </article>
+            </div>
+
+            <div class="col-md-4">
+                <article class="feature-card">
+                    <div class="feature-icon">
+                        <i class="bi bi-shield-check"></i>
+                    </div>
+
+                    <h3>Secure</h3>
+
+                    <p>
+                        Your account and information are protected
+                        with modern security practices.
+                    </p>
+                </article>
+            </div>
+
+            <div class="col-md-4">
+                <article class="feature-card">
+                    <div class="feature-icon">
+                        <i class="bi bi-lightning-charge"></i>
+                    </div>
+
+                    <h3>Fast & Reliable</h3>
+
+                    <p>
+                        Designed for a fast, responsive and
+                        reliable experience across devices.
+                    </p>
+                </article>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+
+<section class="about-preview">
+    <div class="container">
+
+        <div class="row align-items-center g-5">
+
+            <div class="col-lg-6">
+                <div class="content-block">
+
+                    <span class="section-label">Why Us</span>
+
+                    <h2>
+                        Everything is designed
+                        around simplicity.
+                    </h2>
+
+                    <p>
+                        We believe software should be powerful without
+                        being complicated. Our platform gives you the
+                        tools you need while keeping the experience clean
+                        and easy to understand.
+                    </p>
+
+                    <a asp-controller="Home"
+                       asp-action="About"
+                       class="btn btn-primary">
+                        Discover More
+                    </a>
+
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="about-preview-card">
+                    <div class="about-card-content">
+                        <span>01</span>
+                        <h3>Organize</h3>
+                        <p>
+                            Keep everything structured and accessible.
+                        </p>
+                    </div>
+
+                    <div class="about-card-content">
+                        <span>02</span>
+                        <h3>Manage</h3>
+                        <p>
+                            Control your information from one place.
+                        </p>
+                    </div>
+
+                    <div class="about-card-content">
+                        <span>03</span>
+                        <h3>Grow</h3>
+                        <p>
+                            Use your data to make better decisions.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+</section>
+
+
+<section class="cta-section">
+    <div class="container">
+        <div class="cta-content">
+
+            <span class="section-label">Get Started</span>
+
+            <h2>Ready to get started?</h2>
+
+            <p>
+                Create your account and start using the platform today.
+            </p>
+
+            <a asp-controller="Account"
+               asp-action="Register"
+               class="btn btn-primary">
+                Create Account
+            </a>
+
+        </div>
+    </div>
+</section>

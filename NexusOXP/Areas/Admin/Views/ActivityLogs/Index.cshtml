@@ -1,0 +1,45 @@
+@model IReadOnlyList<ActivityLog>
+@{
+    ViewData["Title"] = "Admin Activity";
+}
+
+<div class="dashboard-page">
+    <section class="dashboard-header">
+        <div class="dashboard-header-content">
+            <div>
+                <span class="section-label">Admin</span>
+                <h1>Activity Logs</h1>
+                <p>Latest 250 system events.</p>
+            </div>
+            <div class="dashboard-header-actions">
+                <a asp-area="Admin" asp-controller="Dashboard" asp-action="Index" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-left"></i>
+                    Admin
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <section class="dashboard-section">
+        <div class="dashboard-card">
+            <div class="activity-list">
+                @foreach (var item in Model)
+                {
+                    <div class="activity-log-item">
+                        <div class="activity-icon">
+                            <i class="bi bi-activity"></i>
+                        </div>
+                        <div class="activity-content">
+                            <strong>@item.Action · @item.EntityType</strong>
+                            <p>@item.Description</p>
+                            <span>
+                                @(item.Actor is null ? "System" : $"{item.Actor.FirstName} {item.Actor.LastName}")
+                                · @item.CreatedAt.ToLocalTime().ToString("MMM d, yyyy h:mm tt")
+                            </span>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+</div>

@@ -1,0 +1,126 @@
+@model AdminDashboardViewModel
+@{
+    ViewData["Title"] = "Admin";
+}
+
+<div class="dashboard-page">
+    <section class="dashboard-header">
+        <div class="dashboard-header-content">
+            <div>
+                <span class="section-label">Admin</span>
+                <h1>System Dashboard</h1>
+                <p>Operational view of users, projects, teams, tasks, attachments, and activity.</p>
+            </div>
+
+            <div class="dashboard-header-actions">
+                <a asp-area="Admin" asp-controller="Users" asp-action="Index" class="btn btn-outline-primary">
+                    <i class="bi bi-people"></i>
+                    Users
+                </a>
+                <a asp-area="Admin" asp-controller="ActivityLogs" asp-action="Index" class="btn btn-primary">
+                    <i class="bi bi-clock-history"></i>
+                    Activity
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <section class="dashboard-stats">
+        <div class="row g-4">
+            <div class="col-lg-2 col-md-4">
+                <article class="dashboard-stat-card">
+                    <span class="stat-title">Users</span>
+                    <h2 class="stat-value">@Model.UsersCount</h2>
+                </article>
+            </div>
+            <div class="col-lg-2 col-md-4">
+                <article class="dashboard-stat-card">
+                    <span class="stat-title">Active Users</span>
+                    <h2 class="stat-value">@Model.ActiveUsersCount</h2>
+                </article>
+            </div>
+            <div class="col-lg-2 col-md-4">
+                <article class="dashboard-stat-card">
+                    <span class="stat-title">Projects</span>
+                    <h2 class="stat-value">@Model.ProjectsCount</h2>
+                </article>
+            </div>
+            <div class="col-lg-2 col-md-4">
+                <article class="dashboard-stat-card">
+                    <span class="stat-title">Teams</span>
+                    <h2 class="stat-value">@Model.TeamsCount</h2>
+                </article>
+            </div>
+            <div class="col-lg-2 col-md-4">
+                <article class="dashboard-stat-card">
+                    <span class="stat-title">Tasks</span>
+                    <h2 class="stat-value">@Model.TasksCount</h2>
+                </article>
+            </div>
+            <div class="col-lg-2 col-md-4">
+                <article class="dashboard-stat-card">
+                    <span class="stat-title">Files</span>
+                    <h2 class="stat-value">@Model.AttachmentsCount</h2>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <section class="dashboard-content">
+        <div class="row g-4">
+            <div class="col-lg-6">
+                <div class="dashboard-card">
+                    <div class="dashboard-card-header">
+                        <div>
+                            <h2>Recent Users</h2>
+                            <p>Newest account records.</p>
+                        </div>
+                    </div>
+
+                    <div class="activity-list">
+                        @foreach (var user in Model.RecentUsers)
+                        {
+                            <div class="activity-item">
+                                <div class="activity-icon">
+                                    <i class="bi bi-person"></i>
+                                </div>
+                                <div class="activity-content">
+                                    <strong>@user.Name</strong>
+                                    <p>@user.Email</p>
+                                    <span>@(user.IsActive ? "Active" : "Inactive") · @user.CreatedAt.ToLocalTime().ToString("MMM d, yyyy")</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="dashboard-card">
+                    <div class="dashboard-card-header">
+                        <div>
+                            <h2>Recent Activity</h2>
+                            <p>Latest system events.</p>
+                        </div>
+                    </div>
+
+                    <div class="activity-list">
+                        @foreach (var item in Model.RecentActivity)
+                        {
+                            <div class="activity-item">
+                                <div class="activity-icon">
+                                    <i class="bi bi-activity"></i>
+                                </div>
+                                <div class="activity-content">
+                                    <strong>@item.Action · @item.EntityType</strong>
+                                    <p>@item.Description</p>
+                                    <span>@item.CreatedAt.ToLocalTime().ToString("MMM d, yyyy h:mm tt")</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>

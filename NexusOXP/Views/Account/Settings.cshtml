@@ -1,0 +1,151 @@
+@model AccountOverviewViewModel
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+@{
+    ViewData["Title"] = "Settings";
+
+    var smtpHost = Configuration["Smtp:Host"];
+    var smtpFromAddress = Configuration["Smtp:FromAddress"];
+    var isSmtpConfigured = !string.IsNullOrWhiteSpace(smtpHost) && !string.IsNullOrWhiteSpace(smtpFromAddress);
+}
+
+<div class="dashboard-page">
+    <section class="dashboard-header">
+        <div class="dashboard-header-content">
+            <div>
+                <span class="section-label">Settings</span>
+                <h1>Account Settings</h1>
+                <p>Current account preferences and security status.</p>
+            </div>
+
+            <div class="dashboard-header-actions">
+                <a asp-controller="Account" asp-action="Profile" class="btn btn-outline-primary">
+                    <i class="bi bi-person"></i>
+                    Profile
+                </a>
+                <form asp-controller="Account" asp-action="SendTestEmail" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-envelope-check"></i>
+                        Send Test Email
+                    </button>
+                </form>
+                <a asp-controller="Account" asp-action="ForgotPassword" class="btn btn-primary">
+                    <i class="bi bi-shield-lock"></i>
+                    Reset Password
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <section class="dashboard-content">
+        <div class="row g-4">
+            <div class="col-lg-6">
+                <div class="dashboard-card">
+                    <div class="dashboard-card-header">
+                        <div>
+                            <h2>Sign-in</h2>
+                            <p>Information used to access your account.</p>
+                        </div>
+                    </div>
+
+                    <dl class="project-detail-list">
+                        <dt>Email</dt>
+                        <dd>@Model.Email</dd>
+
+                        <dt>Password</dt>
+                        <dd>Managed through password reset</dd>
+
+                        <dt>Account Status</dt>
+                        <dd>
+                            <span class="badge @(Model.IsActive ? "badge-success" : "badge-danger")">
+                                @(Model.IsActive ? "Active" : "Inactive")
+                            </span>
+                        </dd>
+
+                        <dt>Mail status</dt>
+                        <dd>
+                            <span class="badge @(isSmtpConfigured ? "badge-success" : "badge-danger")">
+                                @(isSmtpConfigured ? "Configured" : "Not configured")
+                            </span>
+                        </dd>
+
+                        <dt>SMTP host</dt>
+                        <dd>@(string.IsNullOrWhiteSpace(smtpHost) ? "Not set" : smtpHost)</dd>
+
+                        <dt>From address</dt>
+                        <dd>@(string.IsNullOrWhiteSpace(smtpFromAddress) ? "Not set" : smtpFromAddress)</dd>
+                    </dl>
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="dashboard-card">
+                    <div class="dashboard-card-header">
+                        <div>
+                            <h2>Access</h2>
+                            <p>Roles currently assigned to your profile.</p>
+                        </div>
+                    </div>
+
+                    @if (Model.Roles.Count == 0)
+                    {
+                        <div class="empty-state">
+                            <div class="empty-state-icon">
+                                <i class="bi bi-person-lock"></i>
+                            </div>
+                            <h3>No roles assigned</h3>
+                            <p>Ask an administrator to review your account access.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="activity-list">
+                            @foreach (var role in Model.Roles)
+                            {
+                                <div class="activity-item">
+                                    <div class="activity-icon">
+                                        <i class="bi bi-person-badge"></i>
+                                    </div>
+                                    <div class="activity-content">
+                                        <strong>@role</strong>
+                                        <p>Role assigned to your account.</p>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="col-12">
+                <div class="dashboard-card">
+                    <div class="dashboard-card-header">
+                        <div>
+                            <h2>Email Configuration</h2>
+                            <p>Check the current Gmail mail setup for password reset notifications.</p>
+                        </div>
+                    </div>
+
+                    <dl class="project-detail-list">
+                        <dt>Mail status</dt>
+                        <dd>
+                            <span class="badge @(isSmtpConfigured ? "badge-success" : "badge-danger")">
+                                @(isSmtpConfigured ? "Configured" : "Not configured")
+                            </span>
+                        </dd>
+
+                        <dt>SMTP host</dt>
+                        <dd>@(string.IsNullOrWhiteSpace(smtpHost) ? "Not set" : smtpHost)</dd>
+
+                        <dt>From address</dt>
+                        <dd>@(string.IsNullOrWhiteSpace(smtpFromAddress) ? "Not set" : smtpFromAddress)</dd>
+                    </dl>
+
+                    <div class="alert alert-info mt-3 mb-0">
+                        <strong>Gmail setup:</strong> use smtp.gmail.com, port 587, SSL enabled, and an App Password instead of your main Google password.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>

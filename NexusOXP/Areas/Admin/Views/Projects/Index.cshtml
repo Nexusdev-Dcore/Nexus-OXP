@@ -1,0 +1,54 @@
+@model IReadOnlyList<Project>
+@{
+    ViewData["Title"] = "Admin Projects";
+}
+
+<div class="dashboard-page">
+    <section class="dashboard-header">
+        <div class="dashboard-header-content">
+            <div>
+                <span class="section-label">Admin</span>
+                <h1>Projects</h1>
+                <p>All projects across the system.</p>
+            </div>
+            <div class="dashboard-header-actions">
+                <a asp-area="Admin" asp-controller="Dashboard" asp-action="Index" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-left"></i>
+                    Admin
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <section class="dashboard-section">
+        <div class="dashboard-card table-responsive">
+            <table class="table dashboard-table align-middle">
+                <thead>
+                    <tr>
+                        <th>Project</th>
+                        <th>Owner</th>
+                        <th>Team</th>
+                        <th>Status</th>
+                        <th>Tasks</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var project in Model)
+                    {
+                        <tr>
+                            <td>@project.Name</td>
+                            <td>@project.Owner.FirstName @project.Owner.LastName</td>
+                            <td>@(project.Team?.Name ?? "Unassigned")</td>
+                            <td>@project.Status</td>
+                            <td>@project.Tasks.Count</td>
+                            <td class="text-end">
+                                <a asp-area="" asp-controller="Projects" asp-action="Details" asp-route-id="@project.Id" class="btn btn-sm btn-outline-primary">Open</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>

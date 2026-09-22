@@ -1,0 +1,13 @@
+{
+  "name": "webapplication2-cloudflare",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "cf:deploy": "set XDG_CONFIG_HOME=.wrangler-config&& wrangler pages deploy wwwroot --project-name webapplication2",
+    "cf:deploy:preview": "set XDG_CONFIG_HOME=.wrangler-config&& wrangler pages deploy wwwroot --project-name webapplication2 --branch preview",
+    "cf:version": "set XDG_CONFIG_HOME=.wrangler-config&& wrangler --version"
+  },
+  "devDependencies": {
+    "wrangler": "^4.125.0"
+  }
+}

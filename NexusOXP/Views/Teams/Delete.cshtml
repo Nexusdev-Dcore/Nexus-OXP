@@ -1,0 +1,42 @@
+@model Team
+@{
+    ViewData["Title"] = "Delete Team";
+}
+
+<div class="dashboard-page">
+    <section class="dashboard-header">
+        <div class="dashboard-header-content">
+            <div>
+                <span class="section-label">Teams</span>
+                <h1>Delete Team</h1>
+                <p>This removes the team and clears its project assignments.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="dashboard-section">
+        <div class="dashboard-card">
+            <div class="delete-summary">
+                <h2>@Model.Name</h2>
+                <p>@(Model.Description ?? "No description")</p>
+
+                <dl class="project-detail-list">
+                    <dt>Manager</dt>
+                    <dd>@Model.Manager.FirstName @Model.Manager.LastName</dd>
+
+                    <dt>Members</dt>
+                    <dd>@Model.Members.Count</dd>
+
+                    <dt>Projects</dt>
+                    <dd>@Model.Projects.Count</dd>
+                </dl>
+
+                <form asp-action="Delete" asp-route-id="@Model.Id" method="post" class="form-actions">
+                    @Html.AntiForgeryToken()
+                    <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-primary">Cancel</a>
+                    <button type="submit" class="btn btn-danger">Delete Team</button>
+                </form>
+            </div>
+        </div>
+    </section>
+</div>

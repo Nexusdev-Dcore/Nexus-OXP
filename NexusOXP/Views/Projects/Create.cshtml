@@ -1,0 +1,34 @@
+@model ProjectFormViewModel
+@{
+    ViewData["Title"] = "Create Project";
+}
+
+<div class="dashboard-page">
+    <section class="dashboard-header">
+        <div class="dashboard-header-content">
+            <div>
+                <span class="section-label">Projects</span>
+                <h1>Create Project</h1>
+                <p>Set up a project with ownership, timeline, status, and priority.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="dashboard-section">
+        <div class="dashboard-card">
+            <form asp-action="Create" method="post" class="project-form">
+                @Html.AntiForgeryToken()
+                <partial name="_ProjectForm" model="Model" />
+
+                <div class="form-actions">
+                    <a asp-action="Index" class="btn btn-outline-primary">Cancel</a>
+                    <button type="submit" class="btn btn-primary">Create Project</button>
+                </div>
+            </form>
+        </div>
+    </section>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

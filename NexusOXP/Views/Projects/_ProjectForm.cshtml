@@ -1,0 +1,43 @@
+@model ProjectFormViewModel
+
+<div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+<input asp-for="Id" type="hidden" />
+
+<div class="row g-3">
+    <div class="col-12">
+        <label asp-for="Name" class="form-label"></label>
+        <input asp-for="Name" class="form-control" placeholder="NEXUS Website" />
+        <span asp-validation-for="Name" class="field-validation-error"></span>
+    </div>
+
+    <div class="col-12">
+        <label asp-for="Description" class="form-label"></label>
+        <textarea asp-for="Description" class="form-control" placeholder="Describe the project goals, scope, and expected outcome."></textarea>
+        <span asp-validation-for="Description" class="field-validation-error"></span>
+    </div>
+
+    <div class="col-md-6">
+        <label asp-for="StartDate" class="form-label"></label>
+        <input asp-for="StartDate" class="form-control" />
+        <span asp-validation-for="StartDate" class="field-validation-error"></span>
+    </div>
+
+    <div class="col-md-6">
+        <label asp-for="Deadline" class="form-label"></label>
+        <input asp-for="Deadline" class="form-control" />
+        <span asp-validation-for="Deadline" class="field-validation-error"></span>
+    </div>
+
+    <div class="col-md-6">
+        <label asp-for="Status" class="form-label"></label>
+        <select asp-for="Status" asp-items="Html.GetEnumSelectList<ProjectStatus>()" class="form-select"></select>
+        <span asp-validation-for="Status" class="field-validation-error"></span>
+    </div>
+
+    <div class="col-md-6">
+        <label asp-for="Priority" class="form-label"></label>
+        <select asp-for="Priority" asp-items="Html.GetEnumSelectList<ProjectPriority>()" class="form-select"></select>
+        <span asp-validation-for="Priority" class="field-validation-error"></span>
+    </div>
+</div>

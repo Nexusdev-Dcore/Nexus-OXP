@@ -1,0 +1,244 @@
+@model ProjectDashboardViewModel
+@{
+    ViewData["Title"] = $"{Model.Project.Name} Dashboard";
+    var canManageProject = User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Manager);
+}
+
+<div class="dashboard-page">
+    <section class="dashboard-header">
+        <div class="dashboard-header-content">
+            <div>
+                <span class="section-label">Project Dashboard</span>
+                <h1>@Model.Project.Name</h1>
+                <p>@(Model.Project.Description ?? "Track this project's status, timeline, team, and activity.")</p>
+            </div>
+
+            <div class="dashboard-header-actions">
+                <a asp-action="Index" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-left"></i>
+                    Projects
+                </a>
+
+                <a asp-action="Details" asp-route-id="@Model.Project.Id" class="btn btn-outline-primary">
+                    <i class="bi bi-info-circle"></i>
+                    Details
+                </a>
+
+                @if (canManageProject)
+                {
+                    <a asp-controller="Tasks" asp-action="Create" asp-route-projectId="@Model.Project.Id" class="btn btn-outline-primary">
+                        <i class="bi bi-plus-lg"></i>
+                        Task
+                    </a>
+
+                    <a asp-action="Edit" asp-route-id="@Model.Project.Id" class="btn btn-primary">
+                        <i class="bi bi-pencil"></i>
+                        Edit
+                    </a>
+                }
+            </div>
+        </div>
+    </section>
+
+    <section class="dashboard-stats">
+        <div class="row g-4">
+            <div class="col-xl-3 col-md-6">
+                <article class="dashboard-stat-card">
+                    <div class="stat-card-top">
+                        <div>
+                            <span class="stat-title">Progress</span>
+                            <h2 class="stat-value">@Model.ProgressPercent%</h2>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="bi bi-bar-chart-line"></i>
+                        </div>
+                    </div>
+                    <div class="progress project-progress">
+                        <div class="progress-bar"
+                             role="progressbar"
+                             style="width: @Model.ProgressPercent%">
+                        </div>
+                    </div>
+                </article>
+            </div>
+
+            <div class="col-xl-3 col-md-6">
+                <article class="dashboard-stat-card">
+                    <div class="stat-card-top">
+                        <div>
+                            <span class="stat-title">Tasks</span>
+                            <h2 class="stat-value">@Model.TotalTasks</h2>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="bi bi-list-check"></i>
+                        </div>
+                    </div>
+                    <div class="stat-footer">
+                        <span>@Model.CompletedTasks completed</span>
+                    </div>
+                </article>
+            </div>
+
+            <div class="col-xl-3 col-md-6">
+                <article class="dashboard-stat-card">
+                    <div class="stat-card-top">
+                        <div>
+                            <span class="stat-title">Team</span>
+                            <h2 class="stat-value">@Model.Project.Members.Count</h2>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="bi bi-people"></i>
+                        </div>
+                    </div>
+                    <div class="stat-footer">
+                        <span>@(Model.Project.Team is null ? $"Owner: {Model.Project.Owner.FirstName}" : Model.Project.Team.Name)</span>
+                    </div>
+                </article>
+            </div>
+
+            <div class="col-xl-3 col-md-6">
+                <article class="dashboard-stat-card">
+                    <div class="stat-card-top">
+                        <div>
+                            <span class="stat-title">Deadline</span>
+                            <h2 class="stat-value stat-value-sm">@(Model.Project.Deadline?.ToString("MMM d, yyyy") ?? "Not set")</h2>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="bi bi-calendar-event"></i>
+                        </div>
+                    </div>
+                    <div class="stat-footer">
+                        <span>@Model.Project.Status</span>
+                    </div>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <section class="dashboard-content">
+        <div class="row g-4">
+            <div class="col-xl-8">
+                <div class="dashboard-card">
+                    <div class="dashboard-card-header">
+                        <div>
+                            <h2>Work Overview</h2>
+                            <p>Live task totals for this project.</p>
+                        </div>
+                    </div>
+
+                    <div class="project-task-actions">
+                        <a asp-controller="Tasks" asp-action="Index" asp-route-projectId="@Model.Project.Id" class="btn btn-outline-primary">
+                            <i class="bi bi-list-check"></i>
+                            View Tasks
+                        </a>
+
+                        <a asp-controller="Tasks" asp-action="Board" asp-route-projectId="@Model.Project.Id" class="btn btn-outline-primary">
+                            <i class="bi bi-kanban"></i>
+                            Board
+                        </a>
+                    </div>
+
+                    <div class="project-task-grid">
+                        <div class="project-task-metric">
+                            <span>Todo</span>
+                            <strong>@Model.TodoTasks</strong>
+                        </div>
+                        <div class="project-task-metric">
+                            <span>In Progress</span>
+                            <strong>@Model.InProgressTasks</strong>
+                        </div>
+                        <div class="project-task-metric">
+                            <span>Review</span>
+                            <strong>@Model.Project.Tasks.Count(task => task.Status == ProjectTaskStatus.Review)</strong>
+                        </div>
+                        <div class="project-task-metric">
+                            <span>Completed</span>
+                            <strong>@Model.CompletedTasks</strong>
+                        </div>
+                    </div>
+
+                    <div class="project-timeline">
+                        <div class="project-timeline-item">
+                            <span>Created</span>
+                            <strong>@Model.Project.CreatedAt.ToLocalTime().ToString("MMM d, yyyy")</strong>
+                        </div>
+                        <div class="project-timeline-line"></div>
+                        <div class="project-timeline-item">
+                            <span>Start</span>
+                            <strong>@(Model.Project.StartDate?.ToString("MMM d, yyyy") ?? "Not set")</strong>
+                        </div>
+                        <div class="project-timeline-line"></div>
+                        <div class="project-timeline-item">
+                            <span>Deadline</span>
+                            <strong>@(Model.Project.Deadline?.ToString("MMM d, yyyy") ?? "Not set")</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-4">
+                <div class="dashboard-card">
+                    <div class="dashboard-card-header">
+                        <div>
+                            <h2>Team</h2>
+                            <p>@(Model.Project.Team is null ? "People attached to this project." : $"Assigned team: {Model.Project.Team.Name}")</p>
+                        </div>
+                    </div>
+
+                    @if (Model.Project.Team is not null)
+                    {
+                        <div class="project-task-actions">
+                            <a asp-controller="Teams" asp-action="Details" asp-route-id="@Model.Project.Team.Id" class="btn btn-outline-primary">
+                                <i class="bi bi-people"></i>
+                                Open Team
+                            </a>
+                        </div>
+                    }
+
+                    <div class="activity-list">
+                        @foreach (var member in Model.Project.Members.OrderBy(member => member.Role))
+                        {
+                            <div class="activity-item">
+                                <div class="activity-icon">
+                                    <i class="bi bi-person"></i>
+                                </div>
+                                <div class="activity-content">
+                                    <strong>@member.User.FirstName @member.User.LastName</strong>
+                                    <p>@member.Role</p>
+                                    <span>@member.User.Email</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="dashboard-section">
+        <div class="dashboard-card">
+            <div class="dashboard-card-header">
+                <div>
+                    <h2>Recent Activity</h2>
+                    <p>Project events available at this stage.</p>
+                </div>
+            </div>
+
+            <div class="activity-list">
+                @foreach (var activity in Model.RecentActivity)
+                {
+                    <div class="activity-item">
+                        <div class="activity-icon">
+                            <i class="bi @activity.Icon"></i>
+                        </div>
+                        <div class="activity-content">
+                            <strong>@activity.Title</strong>
+                            <p>@activity.Description</p>
+                            <span>@activity.OccurredAt.ToLocalTime().ToString("MMM d, yyyy")</span>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+</div>

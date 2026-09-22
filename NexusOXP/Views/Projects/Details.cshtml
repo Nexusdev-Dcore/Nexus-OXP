@@ -1,0 +1,136 @@
+@model Project
+@{
+    ViewData["Title"] = Model.Name;
+    var canManageProject = User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Manager);
+}
+
+<div class="dashboard-page">
+    <section class="dashboard-header">
+        <div class="dashboard-header-content">
+            <div>
+                <span class="section-label">Project Details</span>
+                <h1>@Model.Name</h1>
+                <p>@(Model.Description ?? "No description has been added yet.")</p>
+            </div>
+
+            <div class="dashboard-header-actions">
+                <a asp-action="Index" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-left"></i>
+                    Back
+                </a>
+
+                <a asp-action="Dashboard" asp-route-id="@Model.Id" class="btn btn-outline-primary">
+                    <i class="bi bi-speedometer2"></i>
+                    Dashboard
+                </a>
+
+                @if (canManageProject)
+                {
+                    <a asp-controller="Tasks" asp-action="Create" asp-route-projectId="@Model.Id" class="btn btn-outline-primary">
+                        <i class="bi bi-plus-lg"></i>
+                        Task
+                    </a>
+
+                    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">
+                        <i class="bi bi-pencil"></i>
+                        Edit
+                    </a>
+                }
+            </div>
+        </div>
+    </section>
+
+    <section class="dashboard-stats">
+        <div class="row g-4">
+            <div class="col-lg-3 col-md-6">
+                <article class="dashboard-stat-card">
+                    <span class="stat-title">Status</span>
+                    <h2 class="stat-value stat-value-sm">@Model.Status</h2>
+                </article>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <article class="dashboard-stat-card">
+                    <span class="stat-title">Priority</span>
+                    <h2 class="stat-value stat-value-sm">@Model.Priority</h2>
+                </article>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <article class="dashboard-stat-card">
+                    <span class="stat-title">Start Date</span>
+                    <h2 class="stat-value stat-value-sm">@(Model.StartDate?.ToString("MMM d, yyyy") ?? "Not set")</h2>
+                </article>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <article class="dashboard-stat-card">
+                    <span class="stat-title">Deadline</span>
+                    <h2 class="stat-value stat-value-sm">@(Model.Deadline?.ToString("MMM d, yyyy") ?? "Not set")</h2>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <section class="dashboard-content">
+        <div class="row g-4">
+            <div class="col-lg-7">
+                <div class="dashboard-card">
+                    <div class="dashboard-card-header">
+                        <div>
+                            <h2>Overview</h2>
+                            <p>Core project information.</p>
+                        </div>
+                    </div>
+
+                    <dl class="project-detail-list">
+                        <dt>Owner</dt>
+                        <dd>@Model.Owner.FirstName @Model.Owner.LastName</dd>
+
+                        <dt>Created</dt>
+                        <dd>@Model.CreatedAt.ToLocalTime().ToString("MMM d, yyyy")</dd>
+
+                        <dt>Team</dt>
+                        <dd>
+                            @if (Model.Team is null)
+                            {
+                                <span>Unassigned</span>
+                            }
+                            else
+                            {
+                                <a asp-controller="Teams" asp-action="Details" asp-route-id="@Model.Team.Id">@Model.Team.Name</a>
+                            }
+                        </dd>
+
+                        <dt>Description</dt>
+                        <dd>@(Model.Description ?? "No description")</dd>
+                    </dl>
+                </div>
+            </div>
+
+            <div class="col-lg-5">
+                <div class="dashboard-card">
+                    <div class="dashboard-card-header">
+                        <div>
+                            <h2>Members</h2>
+                            <p>@Model.Members.Count member@(Model.Members.Count == 1 ? "" : "s") assigned.</p>
+                        </div>
+                    </div>
+
+                    <div class="activity-list">
+                        @foreach (var member in Model.Members.OrderBy(member => member.Role))
+                        {
+                            <div class="activity-item">
+                                <div class="activity-icon">
+                                    <i class="bi bi-person"></i>
+                                </div>
+                                <div class="activity-content">
+                                    <strong>@member.User.FirstName @member.User.LastName</strong>
+                                    <p>@member.Role</p>
+                                    <span>Joined @member.JoinedAt.ToLocalTime().ToString("MMM d, yyyy")</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>

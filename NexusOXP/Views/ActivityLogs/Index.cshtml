@@ -1,0 +1,112 @@
+@model IReadOnlyList<ActivityLog>
+@{
+    ViewData["Title"] = "Activity Logs";
+    var selectedType = ViewBag.EntityType as string;
+    var selectedProjectId = ViewBag.ProjectId as int?;
+}
+
+<div class="dashboard-page">
+    <section class="dashboard-header">
+        <div class="dashboard-header-content">
+            <div>
+                <span class="section-label">Activity</span>
+                <h1>Activity Logs</h1>
+                <p>Track project, task, team, and comment changes across your workspace.</p>
+            </div>
+
+            <div class="dashboard-header-actions">
+                <a asp-controller="Dashboard" asp-action="Index" class="btn btn-outline-primary">
+                    <i class="bi bi-speedometer2"></i>
+                    Dashboard
+                </a>
+                <a asp-controller="Notifications" asp-action="Index" class="btn btn-primary">
+                    <i class="bi bi-bell"></i>
+                    Notifications
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <section class="dashboard-section">
+        <div class="dashboard-card">
+            <div class="dashboard-card-header">
+                <div>
+                    <h2>Recent Activity</h2>
+                    <p>Showing the latest @Model.Count event@(Model.Count == 1 ? "" : "s").</p>
+                </div>
+
+                <div class="activity-filter-links">
+                    <a asp-action="Index" class="btn btn-sm @(string.IsNullOrWhiteSpace(selectedType) ? "btn-primary" : "btn-light")">All</a>
+                    <a asp-action="Index" asp-route-entityType="Project" class="btn btn-sm @(selectedType == "Project" ? "btn-primary" : "btn-light")">Projects</a>
+                    <a asp-action="Index" asp-route-entityType="Task" class="btn btn-sm @(selectedType == "Task" ? "btn-primary" : "btn-light")">Tasks</a>
+                    <a asp-action="Index" asp-route-entityType="Team" class="btn btn-sm @(selectedType == "Team" ? "btn-primary" : "btn-light")">Teams</a>
+                    <a asp-action="Index" asp-route-entityType="Comment" class="btn btn-sm @(selectedType == "Comment" ? "btn-primary" : "btn-light")">Comments</a>
+                </div>
+            </div>
+
+            @if (Model.Count == 0)
+            {
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <i class="bi bi-activity"></i>
+                    </div>
+                    <h3>No activity yet</h3>
+                    <p>Activity will appear here after projects, tasks, teams, and comments change.</p>
+                </div>
+            }
+            else
+            {
+                <div class="activity-list activity-log-list">
+                    @foreach (var activity in Model)
+                    {
+                        <article class="activity-item activity-log-item">
+                            <div class="activity-icon">
+                                <i class="bi @ActivityIcon(activity.EntityType, activity.Action)"></i>
+                            </div>
+
+                            <div class="activity-content">
+                                <strong>@activity.Description</strong>
+                                <p>
+                                    @(activity.Actor is null ? "System" : $"{activity.Actor.FirstName} {activity.Actor.LastName}")
+                                    &middot;
+                                    @activity.EntityType
+                                    @if (activity.EntityId.HasValue)
+                                    {
+                                        <span>#@activity.EntityId</span>
+                                    }
+                                </p>
+                                <span>@activity.CreatedAt.ToLocalTime().ToString("MMM d, yyyy h:mm tt")</span>
+                            </div>
+
+                            <span class="badge badge-primary">@activity.Action</span>
+                        </article>
+                    }
+                </div>
+            }
+        </div>
+    </section>
+</div>
+
+@functions {
+    private static string ActivityIcon(string entityType, string action)
+    {
+        if (action.Contains("Delete", StringComparison.OrdinalIgnoreCase))
+        {
+            return "bi-trash";
+        }
+
+        if (action.Contains("Complete", StringComparison.OrdinalIgnoreCase))
+        {
+            return "bi-check-circle";
+        }
+
+        return entityType switch
+        {
+            "Project" => "bi-folder2-open",
+            "Task" => "bi-list-task",
+            "Team" => "bi-people",
+            "Comment" => "bi-chat-left-text",
+            _ => "bi-activity"
+        };
+    }
+}
